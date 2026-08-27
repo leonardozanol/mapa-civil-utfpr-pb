@@ -1,0 +1,1209 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12364a">
+  <meta name="description" content="Mapa interativo das disciplinas obrigatórias e dos pré-requisitos da Matriz 636 de Engenharia Civil da UTFPR, campus Pato Branco.">
+  <title>Mapa da Matriz 636 | Engenharia Civil UTFPR-PB</title>
+  <style>
+    :root {
+      --paper: #f4f0e7;
+      --paper-strong: #fffdf7;
+      --ink: #16313e;
+      --muted: #65747b;
+      --line: #ced6d5;
+      --line-soft: rgba(22, 49, 62, 0.08);
+      --blueprint: #12364a;
+      --blueprint-2: #1e5269;
+      --amber: #d28a1d;
+      --amber-soft: #fff1d2;
+      --violet: #7256a5;
+      --violet-soft: #eee8ff;
+      --teal: #168878;
+      --teal-soft: #dff5ef;
+      --shadow: 0 14px 40px rgba(31, 50, 58, 0.10);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 280px;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(var(--line-soft) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+      background-size: 24px 24px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .page-header {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(28px, 5vw, 62px) max(20px, env(safe-area-inset-left)) 34px;
+      color: #f8fbf9;
+      background:
+        radial-gradient(circle at 86% 14%, rgba(130, 196, 198, 0.28), transparent 28%),
+        linear-gradient(130deg, #102f40, #18475c 70%, #1d5d6a);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .page-header::after {
+      content: "";
+      position: absolute;
+      width: 310px;
+      height: 310px;
+      right: -120px;
+      bottom: -220px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 34px rgba(255, 255, 255, 0.035),
+        0 0 0 68px rgba(255, 255, 255, 0.025);
+      pointer-events: none;
+    }
+
+    .header-inner,
+    .content,
+    .footer-inner {
+      width: min(100%, 1540px);
+      margin-inline: auto;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 14px;
+      color: #b9d9dc;
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 34px;
+      height: 2px;
+      background: #edb95e;
+      border-radius: 99px;
+    }
+
+    h1 {
+      max-width: 920px;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 5vw, 4.4rem);
+      font-weight: 600;
+      line-height: 0.98;
+      letter-spacing: -0.035em;
+      text-wrap: balance;
+    }
+
+    .subtitle {
+      max-width: 780px;
+      margin: 18px 0 0;
+      color: #d9e9e8;
+      font-size: clamp(0.98rem, 2vw, 1.16rem);
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 24px;
+    }
+
+    .stat {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 7px 12px;
+      color: #f8fbf9;
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 750;
+      backdrop-filter: blur(8px);
+    }
+
+    .content {
+      padding: 24px max(16px, env(safe-area-inset-left)) 52px;
+    }
+
+    .guide {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) auto;
+      gap: 18px 28px;
+      align-items: center;
+      margin-bottom: 18px;
+      padding: 17px 19px;
+      background: rgba(255, 253, 247, 0.88);
+      border: 1px solid rgba(22, 49, 62, 0.13);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(31, 50, 58, 0.06);
+      backdrop-filter: blur(8px);
+    }
+
+    .guide-copy {
+      margin: 0;
+      color: #405660;
+      font-size: 0.94rem;
+    }
+
+    .guide-copy strong {
+      color: var(--ink);
+    }
+
+    .desktop-copy {
+      display: inline;
+    }
+
+    .mobile-copy {
+      display: none;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px 14px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px rgba(22, 49, 62, 0.05);
+    }
+
+    .legend-dot.prior {
+      background: var(--amber);
+    }
+
+    .legend-dot.current {
+      background: var(--violet);
+    }
+
+    .legend-dot.next {
+      background: var(--teal);
+    }
+
+    .selection-panel {
+      position: sticky;
+      top: 12px;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: minmax(240px, 1.1fr) minmax(280px, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      margin: 0 0 18px;
+      padding: 16px 18px;
+      background: rgba(255, 253, 247, 0.96);
+      border: 1px solid rgba(114, 86, 165, 0.34);
+      border-left: 5px solid var(--violet);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .selection-panel[hidden] {
+      display: none;
+    }
+
+    .selection-kicker {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--violet);
+      font-size: 0.7rem;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .selection-title {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.05rem, 2vw, 1.32rem);
+      line-height: 1.14;
+    }
+
+    .selection-meta {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .relation-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .relation-box {
+      min-width: 0;
+      padding: 9px 11px;
+      border-radius: 11px;
+      font-size: 0.76rem;
+    }
+
+    .relation-box.prior {
+      color: #784d0b;
+      background: var(--amber-soft);
+    }
+
+    .relation-box.next {
+      color: #086657;
+      background: var(--teal-soft);
+    }
+
+    .relation-box b {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 1rem;
+    }
+
+    .clear-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      min-height: 44px;
+      padding: 9px 13px;
+      color: var(--ink);
+      background: transparent;
+      border: 1px solid rgba(22, 49, 62, 0.22);
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 800;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .clear-button:hover {
+      background: #f0ece3;
+      border-color: rgba(22, 49, 62, 0.38);
+    }
+
+    .clear-button:active {
+      transform: scale(0.97);
+    }
+
+    .map-viewport {
+      position: relative;
+      overflow: auto;
+      overscroll-behavior-inline: contain;
+      padding: 6px 6px 18px;
+      background: rgba(255, 253, 247, 0.58);
+      border: 1px solid rgba(22, 49, 62, 0.14);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      scrollbar-width: thin;
+      scrollbar-color: #8aa0a7 transparent;
+    }
+
+    .map-stage {
+      position: relative;
+      width: max-content;
+      min-width: 100%;
+      isolation: isolate;
+    }
+
+    .period-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(10, minmax(196px, 1fr));
+      gap: 26px;
+      min-width: 2220px;
+      padding: 14px;
+    }
+
+    .connections {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .edge {
+      fill: none;
+      stroke: rgba(71, 94, 103, 0.25);
+      stroke-width: 1.25;
+      stroke-linecap: round;
+      transition: opacity 180ms ease, stroke 180ms ease, stroke-width 180ms ease;
+    }
+
+    .edge.is-dimmed {
+      opacity: 0.08;
+    }
+
+    .edge.is-prereq {
+      stroke: var(--amber);
+      stroke-width: 2.4;
+      opacity: 0.95;
+    }
+
+    .edge.is-unlocked {
+      stroke: var(--teal);
+      stroke-width: 2.4;
+      opacity: 0.95;
+    }
+
+    .period-column {
+      position: relative;
+      min-width: 0;
+      padding: 12px 10px 14px;
+      background: rgba(248, 246, 239, 0.72);
+      border: 1px solid rgba(22, 49, 62, 0.10);
+      border-radius: 17px;
+    }
+
+    .period-heading {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 2px 13px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(22, 49, 62, 0.12);
+    }
+
+    .period-number {
+      display: inline-grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 auto;
+      color: #fff;
+      background: var(--blueprint);
+      border-radius: 9px 9px 9px 2px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1rem;
+      font-weight: 700;
+      box-shadow: 0 5px 12px rgba(18, 54, 74, 0.18);
+    }
+
+    .period-label {
+      min-width: 0;
+    }
+
+    .period-label strong {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.98rem;
+      line-height: 1.05;
+    }
+
+    .period-label small {
+      color: var(--muted);
+      font-size: 0.69rem;
+      font-weight: 700;
+    }
+
+    .course-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .course-card {
+      --type-color: #557a8b;
+      position: relative;
+      width: 100%;
+      min-height: 96px;
+      overflow: hidden;
+      padding: 13px 12px 12px 15px;
+      color: var(--ink);
+      text-align: left;
+      background: var(--paper-strong);
+      border: 1px solid rgba(22, 49, 62, 0.16);
+      border-radius: 13px;
+      box-shadow: 0 5px 13px rgba(31, 50, 58, 0.055);
+      cursor: pointer;
+      transition:
+        transform 170ms ease,
+        border-color 170ms ease,
+        background 170ms ease,
+        opacity 170ms ease,
+        box-shadow 170ms ease;
+    }
+
+    .course-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      background: var(--type-color);
+      border-radius: 13px 0 0 13px;
+      transition: width 170ms ease, background 170ms ease;
+    }
+
+    .course-card[data-type="basica"] {
+      --type-color: #347ca0;
+    }
+
+    .course-card[data-type="profissional"] {
+      --type-color: #c66b3d;
+    }
+
+    .course-card[data-type="humanistica"] {
+      --type-color: #8a6ba6;
+    }
+
+    .course-card[data-type="comum"] {
+      --type-color: #3e928d;
+    }
+
+    .course-card[data-type="estagio"],
+    .course-card[data-type="atividade"],
+    .course-card[data-type="tcc"] {
+      --type-color: #738943;
+    }
+
+    .course-card:hover {
+      z-index: 3;
+      transform: translateY(-2px);
+      border-color: rgba(22, 49, 62, 0.34);
+      box-shadow: 0 10px 23px rgba(31, 50, 58, 0.11);
+    }
+
+    .course-card:focus-visible,
+    .clear-button:focus-visible,
+    .source-link:focus-visible {
+      outline: 3px solid rgba(30, 82, 105, 0.33);
+      outline-offset: 3px;
+    }
+
+    .course-code-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .course-code {
+      color: var(--blueprint-2);
+      font-size: 0.7rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .course-hours {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 0.67rem;
+      font-weight: 800;
+    }
+
+    .course-name {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 0.91rem;
+      font-weight: 700;
+      line-height: 1.16;
+    }
+
+    .course-card.is-selected {
+      color: #34235b;
+      background: var(--violet-soft);
+      border-color: var(--violet);
+      box-shadow: 0 0 0 2px rgba(114, 86, 165, 0.15), 0 10px 22px rgba(74, 52, 121, 0.16);
+      transform: translateY(-2px);
+    }
+
+    .course-card.is-selected::before {
+      width: 6px;
+      background: var(--violet);
+    }
+
+    .course-card.is-prereq {
+      color: #68420b;
+      background: var(--amber-soft);
+      border-color: rgba(210, 138, 29, 0.82);
+    }
+
+    .course-card.is-prereq::before {
+      width: 5px;
+      background: var(--amber);
+    }
+
+    .course-card.is-unlocked {
+      color: #075e52;
+      background: var(--teal-soft);
+      border-color: rgba(22, 136, 120, 0.76);
+    }
+
+    .course-card.is-unlocked::before {
+      width: 5px;
+      background: var(--teal);
+    }
+
+    .course-card.is-dimmed {
+      opacity: 0.27;
+      filter: saturate(0.5);
+    }
+
+    .course-card.is-dimmed:hover {
+      opacity: 0.68;
+    }
+
+    .map-note {
+      margin: 14px 4px 0;
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    .page-footer {
+      padding: 25px max(20px, env(safe-area-inset-left)) max(34px, env(safe-area-inset-bottom));
+      color: #d6e2e2;
+      background: var(--blueprint);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .footer-copy {
+      margin: 0;
+      font-size: 0.78rem;
+    }
+
+    .source-link {
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-underline-offset: 3px;
+    }
+
+    noscript {
+      display: block;
+      margin: 20px;
+      padding: 16px;
+      color: #721c24;
+      background: #f8d7da;
+      border-radius: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .guide {
+        grid-template-columns: 1fr;
+      }
+
+      .legend {
+        justify-content: flex-start;
+      }
+
+      .desktop-copy {
+        display: none;
+      }
+
+      .mobile-copy {
+        display: inline;
+      }
+
+      .map-viewport {
+        overflow: visible;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+      }
+
+      .map-stage {
+        width: 100%;
+      }
+
+      .period-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        min-width: 0;
+        padding: 0;
+      }
+
+      .connections {
+        display: none;
+      }
+
+      .period-column {
+        padding: 13px;
+        background: rgba(255, 253, 247, 0.78);
+        box-shadow: 0 7px 20px rgba(31, 50, 58, 0.06);
+      }
+
+      .course-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .selection-panel {
+        position: fixed;
+        inset: auto 12px calc(12px + env(safe-area-inset-bottom)) 12px;
+        z-index: 50;
+        grid-template-columns: 1fr auto;
+        max-height: min(44vh, 330px);
+        overflow: auto;
+        margin: 0;
+        padding: 14px;
+        border-left-width: 4px;
+        box-shadow: 0 18px 55px rgba(17, 43, 55, 0.30);
+      }
+
+      .relation-summary {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+
+      body.has-selection {
+        padding-bottom: 178px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page-header {
+        padding-top: 30px;
+        padding-bottom: 28px;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 11vw, 3rem);
+      }
+
+      .content {
+        padding-top: 16px;
+      }
+
+      .guide {
+        padding: 15px;
+        border-radius: 15px;
+      }
+
+      .legend {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .course-list {
+        grid-template-columns: 1fr;
+      }
+
+      .course-card {
+        min-height: 86px;
+      }
+
+      .footer-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page-header {
+        color: #000;
+        background: #fff;
+        border-bottom: 2px solid #000;
+      }
+
+      .subtitle,
+      .eyebrow,
+      .stat {
+        color: #000;
+      }
+
+      .guide,
+      .selection-panel,
+      .connections,
+      .page-footer {
+        display: none !important;
+      }
+
+      .content {
+        width: 100%;
+        padding: 14px 0;
+      }
+
+      .map-viewport {
+        overflow: visible;
+        border: 0;
+        box-shadow: none;
+      }
+
+      .map-stage {
+        width: 100%;
+      }
+
+      .period-grid {
+        grid-template-columns: repeat(2, 1fr);
+        min-width: 0;
+      }
+
+      .course-card {
+        break-inside: avoid;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="header-inner">
+      <p class="eyebrow">UTFPR · Campus Pato Branco</p>
+      <h1>Mapa da Matriz 636</h1>
+      <p class="subtitle">Engenharia Civil — disciplinas obrigatórias organizadas por período e conectadas pela cadeia de pré-requisitos.</p>
+      <div class="stats" aria-label="Resumo da matriz">
+        <span class="stat">62 componentes obrigatórios</span>
+        <span class="stat">3.660 horas</span>
+        <span class="stat">10 períodos</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="content">
+    <section class="guide" aria-label="Como usar o mapa">
+      <p class="guide-copy">
+        <strong>Selecione uma disciplina</strong> para destacar toda a cadeia anterior de pré-requisitos e as matérias que ela libera posteriormente.
+        <span class="desktop-copy"> Arraste o mapa horizontalmente para percorrer os períodos.</span>
+        <span class="mobile-copy"> Role a página para percorrer os períodos.</span>
+      </p>
+      <div class="legend" aria-label="Legenda dos destaques">
+        <span class="legend-item"><span class="legend-dot prior"></span>Cadeia anterior</span>
+        <span class="legend-item"><span class="legend-dot current"></span>Selecionada</span>
+        <span class="legend-item"><span class="legend-dot next"></span>Libera depois</span>
+      </div>
+    </section>
+
+    <aside id="selectionPanel" class="selection-panel" aria-live="polite" hidden>
+      <div>
+        <span class="selection-kicker" id="selectionCode"></span>
+        <h2 class="selection-title" id="selectionTitle"></h2>
+        <p class="selection-meta" id="selectionMeta"></p>
+      </div>
+      <div class="relation-summary">
+        <div class="relation-box prior"><b id="priorCount">0</b><span>na cadeia anterior</span></div>
+        <div class="relation-box next"><b id="nextCount">0</b><span>liberadas depois</span></div>
+      </div>
+      <button id="clearButton" class="clear-button" type="button" aria-label="Limpar seleção">Limpar</button>
+    </aside>
+
+    <section class="map-viewport" id="mapViewport" aria-label="Mapa das disciplinas por período">
+      <div class="map-stage" id="mapStage">
+        <svg class="connections" id="connections" aria-hidden="true"></svg>
+        <div class="period-grid" id="periodGrid"></div>
+      </div>
+    </section>
+
+    <p class="map-note">As disciplinas optativas dos grupos 785 e 786 e os registros de ENADE não fazem parte deste mapa.</p>
+    <noscript>Este mapa precisa do JavaScript ativado para exibir as disciplinas e suas relações.</noscript>
+  </main>
+
+  <footer class="page-footer">
+    <div class="footer-inner">
+      <p class="footer-copy">Engenharia Civil · Matriz 636 · UTFPR-PB</p>
+      <a class="source-link" href="https://www.utfpr.edu.br/cursos/coordenacoes/graduacao/pato-branco/pb-engenharia-civil/documentos/matrizes-curriculares-636.pdf/@@download/file" target="_blank" rel="noopener noreferrer">Consultar matriz oficial</a>
+    </div>
+  </footer>
+
+  <script>
+    "use strict";
+
+    const COURSES = [
+      { code: "EG41NB", name: "Expressão Gráfica", period: 1, hours: 60, type: "basica", prerequisites: [] },
+      { code: "GA41NB", name: "Geometria Analítica", period: 1, hours: 60, type: "basica", prerequisites: [] },
+      { code: "IE41CV", name: "Introdução à Engenharia Civil", period: 1, hours: 30, type: "profissional", prerequisites: [] },
+      { code: "LP41NB", name: "Leitura e Produção de Gêneros Acadêmicos", period: 1, hours: 30, type: "humanistica", prerequisites: [] },
+      { code: "PC41NB", name: "Pré-Cálculo", period: 1, hours: 60, type: "basica", prerequisites: [] },
+
+      { code: "AL42NB", name: "Álgebra Linear", period: 2, hours: 60, type: "basica", prerequisites: ["GA41NB"] },
+      { code: "CA42NB", name: "Ciências do Ambiente", period: 2, hours: 30, type: "humanistica", prerequisites: [] },
+      { code: "CD42NB", name: "Cálculo Diferencial e Integral", period: 2, hours: 60, type: "basica", prerequisites: ["PC41NB"] },
+      { code: "QU42NB", name: "Química", period: 2, hours: 90, type: "basica", prerequisites: [] },
+      { code: "TO42CV", name: "Topografia", period: 2, hours: 60, type: "profissional", prerequisites: [] },
+
+      { code: "AP43NB", name: "Algoritmos e Programação", period: 3, hours: 60, type: "basica", prerequisites: [] },
+      { code: "CV42NB", name: "Cálculo em Várias Variáveis Reais", period: 3, hours: 60, type: "comum", prerequisites: ["CD42NB", "GA41NB"] },
+      { code: "DA43NB", name: "Desenho Arquitetônico", period: 3, hours: 60, type: "humanistica", prerequisites: ["EG41NB"] },
+      { code: "FT41NB", name: "Física Teórica I", period: 3, hours: 60, type: "comum", prerequisites: [] },
+      { code: "MC43CV", name: "Materiais de Construção 1", period: 3, hours: 60, type: "basica", prerequisites: ["QU42NB"] },
+      { code: "PE43NB", name: "Probabilidade e Estatística", period: 3, hours: 60, type: "basica", prerequisites: ["CD42NB"] },
+
+      { code: "CN44NB", name: "Cálculo Numérico", period: 4, hours: 60, type: "basica", prerequisites: ["AP43NB", "CD42NB", "GA41NB"] },
+      { code: "ES44CV", name: "Estática", period: 4, hours: 60, type: "profissional", prerequisites: ["AL42NB", "FT41NB"] },
+      { code: "FS42NB", name: "Física Experimental A", period: 4, hours: 30, type: "comum", prerequisites: ["FT41NB"] },
+      { code: "FT42NB", name: "Física Teórica II", period: 4, hours: 60, type: "comum", prerequisites: ["FT41NB"] },
+      { code: "GO44CV", name: "Geoprocessamento", period: 4, hours: 60, type: "profissional", prerequisites: [] },
+      { code: "MC44CV", name: "Materiais de Construção 2", period: 4, hours: 60, type: "profissional", prerequisites: [] },
+      { code: "TC44CV", name: "Tecnologia da Construção 1", period: 4, hours: 75, type: "profissional", prerequisites: [] },
+
+      { code: "FS43NB", name: "Física Experimental B", period: 5, hours: 30, type: "comum", prerequisites: ["FS42NB", "FT42NB"] },
+      { code: "GA45CV", name: "Geologia Aplicada à Engenharia", period: 5, hours: 60, type: "profissional", prerequisites: ["GO44CV"] },
+      { code: "MC45CV", name: "Materiais de Construção 3", period: 5, hours: 60, type: "profissional", prerequisites: ["MC44CV", "PE43NB"] },
+      { code: "MF45NB", name: "Mecânica dos Fluidos 1", period: 5, hours: 45, type: "basica", prerequisites: ["FT42NB"] },
+      { code: "PA42NB", name: "Psicologia Aplicada ao Trabalho", period: 5, hours: 30, type: "humanistica", prerequisites: [] },
+      { code: "RM45CV", name: "Resistência dos Materiais 1", period: 5, hours: 45, type: "basica", prerequisites: ["ES44CV"] },
+      { code: "SE45CV", name: "Sistemas Estruturais", period: 5, hours: 30, type: "profissional", prerequisites: ["ES44CV"] },
+      { code: "TC45CV", name: "Tecnologia da Construção 2", period: 5, hours: 90, type: "profissional", prerequisites: ["MC43CV", "MC44CV", "TC44CV"] },
+
+      { code: "EI46CV", name: "Estruturas Isostáticas", period: 6, hours: 60, type: "profissional", prerequisites: ["ES44CV"] },
+      { code: "GE46NB", name: "Gestão de Pessoas", period: 6, hours: 30, type: "humanistica", prerequisites: [] },
+      { code: "GS46CV", name: "Gestão da Segurança do Trabalho na Construção Civil", period: 6, hours: 45, type: "profissional", prerequisites: [] },
+      { code: "HA46CV", name: "Hidrologia", period: 6, hours: 60, type: "profissional", prerequisites: ["MF45NB"] },
+      { code: "IE46CV", name: "Instalações Elétricas Prediais", period: 6, hours: 60, type: "profissional", prerequisites: [] },
+      { code: "MF46NB", name: "Mecânica dos Fluidos 2", period: 6, hours: 30, type: "basica", prerequisites: [] },
+      { code: "MS46CV", name: "Mecânica dos Solos", period: 6, hours: 75, type: "profissional", prerequisites: ["GA45CV"] },
+      { code: "RM46CV", name: "Resistência dos Materiais 2", period: 6, hours: 45, type: "basica", prerequisites: ["RM45CV"] },
+      { code: "TR46CV", name: "Transportes", period: 6, hours: 45, type: "profissional", prerequisites: [] },
+
+      { code: "CT47NB", name: "Custos", period: 7, hours: 30, type: "humanistica", prerequisites: [] },
+      { code: "EA47CV", name: "Estruturas de Aço", period: 7, hours: 45, type: "profissional", prerequisites: ["RM46CV", "SE45CV"] },
+      { code: "EH47CV", name: "Estruturas Hiperestáticas", period: 7, hours: 60, type: "profissional", prerequisites: ["EI46CV"] },
+      { code: "EM47CV", name: "Estruturas de Madeira", period: 7, hours: 45, type: "profissional", prerequisites: ["RM45CV", "SE45CV"] },
+      { code: "ES40CV", name: "Estágio Curricular Obrigatório", period: 7, hours: 360, type: "estagio", prerequisites: [] },
+      { code: "HI47CV", name: "Hidráulica", period: 7, hours: 75, type: "profissional", prerequisites: ["MF45NB", "MF46NB"] },
+      { code: "PA47CV", name: "Projeto Arquitetônico", period: 7, hours: 60, type: "profissional", prerequisites: ["DA43NB"] },
+      { code: "PG47CV", name: "Projeto Geométrico de Rodovias", period: 7, hours: 60, type: "profissional", prerequisites: ["GO44CV", "TO42CV", "TR46CV"] },
+
+      { code: "CA48CV", name: "Concreto Armado 1", period: 8, hours: 60, type: "profissional", prerequisites: ["RM45CV", "SE45CV"] },
+      { code: "EE48NB", name: "Empreendedorismo", period: 8, hours: 30, type: "humanistica", prerequisites: [] },
+      { code: "EO48CV", name: "Especificações e Orçamentos", period: 8, hours: 60, type: "profissional", prerequisites: ["TC45CV"] },
+      { code: "IH48CV", name: "Instalações Hidrossanitárias Prediais", period: 8, hours: 60, type: "profissional", prerequisites: ["HI47CV"] },
+      { code: "MP48NB", name: "Metodologia da Pesquisa", period: 8, hours: 30, type: "humanistica", prerequisites: [] },
+      { code: "PV48CV", name: "Pavimentação", period: 8, hours: 60, type: "profissional", prerequisites: ["MS46CV", "TR46CV"] },
+      { code: "SA48CV", name: "Saneamento Ambiental", period: 8, hours: 75, type: "profissional", prerequisites: ["HA46CV", "HI47CV"] },
+
+      { code: "CA49CV", name: "Concreto Armado 2", period: 9, hours: 60, type: "profissional", prerequisites: ["CA48CV"] },
+      { code: "DF49CV", name: "Dimensionamento de Fundações e Obras de Terra", period: 9, hours: 75, type: "profissional", prerequisites: ["CA48CV", "MS46CV"] },
+      { code: "GO49CV", name: "Gerenciamento de Obras", period: 9, hours: 60, type: "profissional", prerequisites: ["EO48CV"] },
+      { code: "PI49CV", name: "Projeto Integrador", period: 9, hours: 30, type: "humanistica", prerequisites: ["CA42NB", "GE46NB", "LP41NB", "MP48NB", "PA42NB"] },
+      { code: "TC49CV", name: "Trabalho de Conclusão de Curso 1", period: 9, hours: 60, type: "tcc", prerequisites: [] },
+
+      { code: "AC40CV", name: "Atividades Complementares", period: 10, hours: 60, type: "atividade", prerequisites: [] },
+      { code: "TC40CV", name: "Trabalho de Conclusão de Curso 2", period: 10, hours: 60, type: "tcc", prerequisites: ["TC49CV"] }
+    ];
+
+    const courseByCode = new Map(COURSES.map(function(course) {
+      return [course.code, course];
+    }));
+
+    const dependents = new Map(COURSES.map(function(course) {
+      return [course.code, []];
+    }));
+
+    COURSES.forEach(function(course) {
+      course.prerequisites.forEach(function(prerequisite) {
+        if (!courseByCode.has(prerequisite)) {
+          throw new Error("Pré-requisito desconhecido: " + prerequisite);
+        }
+        dependents.get(prerequisite).push(course.code);
+      });
+    });
+
+    const totalHours = COURSES.reduce(function(total, course) {
+      return total + course.hours;
+    }, 0);
+
+    if (COURSES.length !== 62 || totalHours !== 3660) {
+      throw new Error("Os dados da Matriz 636 estão incompletos.");
+    }
+
+    const periodGrid = document.getElementById("periodGrid");
+    const connections = document.getElementById("connections");
+    const mapStage = document.getElementById("mapStage");
+    const selectionPanel = document.getElementById("selectionPanel");
+    const selectionCode = document.getElementById("selectionCode");
+    const selectionTitle = document.getElementById("selectionTitle");
+    const selectionMeta = document.getElementById("selectionMeta");
+    const priorCount = document.getElementById("priorCount");
+    const nextCount = document.getElementById("nextCount");
+    const clearButton = document.getElementById("clearButton");
+
+    let selectedCode = null;
+    let resizeTimer = null;
+
+    function pluralize(value, singular, plural) {
+      return value + " " + (value === 1 ? singular : plural);
+    }
+
+    function collectRelations(startCode, relationMap) {
+      const result = new Set();
+      const pending = (relationMap.get(startCode) || []).slice();
+
+      while (pending.length) {
+        const code = pending.pop();
+        if (result.has(code)) {
+          continue;
+        }
+        result.add(code);
+        (relationMap.get(code) || []).forEach(function(nextCode) {
+          pending.push(nextCode);
+        });
+      }
+
+      return result;
+    }
+
+    function prerequisiteMap() {
+      return new Map(COURSES.map(function(course) {
+        return [course.code, course.prerequisites];
+      }));
+    }
+
+    const prerequisitesByCode = prerequisiteMap();
+
+    function renderPeriods() {
+      const fragment = document.createDocumentFragment();
+
+      for (let period = 1; period <= 10; period += 1) {
+        const courses = COURSES.filter(function(course) {
+          return course.period === period;
+        });
+        const periodHours = courses.reduce(function(total, course) {
+          return total + course.hours;
+        }, 0);
+
+        const column = document.createElement("section");
+        column.className = "period-column";
+        column.setAttribute("aria-labelledby", "period-" + period);
+
+        const heading = document.createElement("h2");
+        heading.className = "period-heading";
+        heading.id = "period-" + period;
+        heading.innerHTML =
+          '<span class="period-number">' + period + '</span>' +
+          '<span class="period-label"><strong>' + period + 'º período</strong>' +
+          '<small>' + courses.length + ' componentes · ' + periodHours.toLocaleString("pt-BR") + ' h</small></span>';
+
+        const list = document.createElement("div");
+        list.className = "course-list";
+
+        courses.forEach(function(course) {
+          const card = document.createElement("button");
+          card.type = "button";
+          card.className = "course-card";
+          card.dataset.code = course.code;
+          card.dataset.type = course.type;
+          card.setAttribute("aria-pressed", "false");
+          card.setAttribute(
+            "aria-label",
+            course.name + ", código " + course.code + ", " + course.hours + " horas, " + course.period + "º período"
+          );
+          card.innerHTML =
+            '<span class="course-code-row">' +
+              '<span class="course-code">' + course.code + '</span>' +
+              '<span class="course-hours">' + course.hours.toLocaleString("pt-BR") + ' h</span>' +
+            '</span>' +
+            '<span class="course-name">' + course.name + '</span>';
+
+          card.addEventListener("click", function() {
+            if (selectedCode === course.code) {
+              clearSelection();
+            } else {
+              selectCourse(course.code);
+            }
+          });
+
+          list.appendChild(card);
+        });
+
+        column.appendChild(heading);
+        column.appendChild(list);
+        fragment.appendChild(column);
+      }
+
+      periodGrid.appendChild(fragment);
+    }
+
+    function drawConnections() {
+      connections.replaceChildren();
+
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        return;
+      }
+
+      const stageRect = mapStage.getBoundingClientRect();
+      const width = mapStage.scrollWidth;
+      const height = mapStage.scrollHeight;
+      connections.setAttribute("viewBox", "0 0 " + width + " " + height);
+      connections.setAttribute("width", String(width));
+      connections.setAttribute("height", String(height));
+
+      COURSES.forEach(function(course) {
+        const target = periodGrid.querySelector('[data-code="' + course.code + '"]');
+        if (!target) {
+          return;
+        }
+        const targetRect = target.getBoundingClientRect();
+
+        course.prerequisites.forEach(function(prerequisiteCode) {
+          const source = periodGrid.querySelector('[data-code="' + prerequisiteCode + '"]');
+          if (!source) {
+            return;
+          }
+
+          const sourceRect = source.getBoundingClientRect();
+          const startX = sourceRect.right - stageRect.left;
+          const startY = sourceRect.top - stageRect.top + sourceRect.height / 2;
+          const endX = targetRect.left - stageRect.left;
+          const endY = targetRect.top - stageRect.top + targetRect.height / 2;
+          const distance = Math.max(28, (endX - startX) * 0.48);
+
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          path.setAttribute("class", "edge");
+          path.setAttribute("data-source", prerequisiteCode);
+          path.setAttribute("data-target", course.code);
+          path.setAttribute(
+            "d",
+            "M " + startX + " " + startY +
+            " C " + (startX + distance) + " " + startY +
+            ", " + (endX - distance) + " " + endY +
+            ", " + endX + " " + endY
+          );
+          connections.appendChild(path);
+        });
+      });
+
+      updateHighlights();
+    }
+
+    function selectCourse(code) {
+      selectedCode = code;
+      const course = courseByCode.get(code);
+      const ancestors = collectRelations(code, prerequisitesByCode);
+      const descendants = collectRelations(code, dependents);
+
+      selectionCode.textContent = course.code + " · " + course.period + "º período";
+      selectionTitle.textContent = course.name;
+      selectionMeta.textContent = pluralize(course.hours, "hora", "horas");
+      priorCount.textContent = String(ancestors.size);
+      nextCount.textContent = String(descendants.size);
+      selectionPanel.hidden = false;
+      document.body.classList.add("has-selection");
+
+      updateHighlights(ancestors, descendants);
+      window.requestAnimationFrame(drawConnections);
+    }
+
+    function clearSelection() {
+      selectedCode = null;
+      selectionPanel.hidden = true;
+      document.body.classList.remove("has-selection");
+      updateHighlights();
+      window.requestAnimationFrame(drawConnections);
+    }
+
+    function updateHighlights(ancestorSet, descendantSet) {
+      const ancestors = ancestorSet || (selectedCode ? collectRelations(selectedCode, prerequisitesByCode) : new Set());
+      const descendants = descendantSet || (selectedCode ? collectRelations(selectedCode, dependents) : new Set());
+
+      periodGrid.querySelectorAll(".course-card").forEach(function(card) {
+        const code = card.dataset.code;
+        card.classList.remove("is-selected", "is-prereq", "is-unlocked", "is-dimmed");
+        card.setAttribute("aria-pressed", code === selectedCode ? "true" : "false");
+
+        if (!selectedCode) {
+          return;
+        }
+
+        if (code === selectedCode) {
+          card.classList.add("is-selected");
+        } else if (ancestors.has(code)) {
+          card.classList.add("is-prereq");
+        } else if (descendants.has(code)) {
+          card.classList.add("is-unlocked");
+        } else {
+          card.classList.add("is-dimmed");
+        }
+      });
+
+      connections.querySelectorAll(".edge").forEach(function(edge) {
+        const source = edge.dataset.source;
+        const target = edge.dataset.target;
+        edge.classList.remove("is-prereq", "is-unlocked", "is-dimmed");
+
+        if (!selectedCode) {
+          return;
+        }
+
+        const isPriorPath =
+          (target === selectedCode || ancestors.has(target)) &&
+          ancestors.has(source);
+        const isNextPath =
+          (source === selectedCode || descendants.has(source)) &&
+          descendants.has(target);
+
+        if (isPriorPath) {
+          edge.classList.add("is-prereq");
+        } else if (isNextPath) {
+          edge.classList.add("is-unlocked");
+        } else {
+          edge.classList.add("is-dimmed");
+        }
+      });
+    }
+
+    clearButton.addEventListener("click", clearSelection);
+
+    window.addEventListener("resize", function() {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(drawConnections, 120);
+    });
+
+    window.addEventListener("load", drawConnections);
+
+    renderPeriods();
+    window.requestAnimationFrame(drawConnections);
+  </script>
+</body>
+</html>
