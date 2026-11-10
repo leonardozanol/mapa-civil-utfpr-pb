@@ -1,864 +1,512 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#12364a">
-  <meta name="description" content="Mapa interativo das disciplinas obrigatórias e dos pré-requisitos da Matriz 636 de Engenharia Civil da UTFPR, campus Pato Branco.">
-  <title>Mapa da Matriz 636 | Engenharia Civil UTFPR-PB</title>
+  <meta name="theme-color" content="#FFD32C">
+  <meta name="description" content="Disciplinas obrigatórias organizadas por período e conectadas pela cadeia de pré-requisitos conforme a Matriz 636">
+  <title>Engenharia Civil | Matriz 636 · UTFPR-PB</title>
+  <script>
+    (function () {
+      let theme;
+      try { theme = localStorage.getItem('civil-636-theme'); } catch (_) {}
+      document.documentElement.dataset.theme = theme === 'dark' || theme === 'light'
+        ? theme : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    })();
+  </script>
   <style>
     :root {
-      --paper: #f4f0e7;
-      --paper-strong: #fffdf7;
-      --ink: #16313e;
-      --muted: #65747b;
-      --line: #ced6d5;
-      --line-soft: rgba(22, 49, 62, 0.08);
-      --blueprint: #12364a;
-      --blueprint-2: #1e5269;
-      --amber: #d28a1d;
-      --amber-soft: #fff1d2;
-      --violet: #7256a5;
-      --violet-soft: #eee8ff;
-      --teal: #168878;
-      --teal-soft: #dff5ef;
-      --shadow: 0 14px 40px rgba(31, 50, 58, 0.10);
-      --radius: 18px;
+      color-scheme: light;
+      --yellow: #FFD32C;
+      --yellow-hover: #f3c51c;
+      --paper: #f7f7f2;
+      --surface: #ffffff;
+      --canvas: #fbfcf8;
+      --ink: #25271f;
+      --muted: #6b7061;
+      --line: #e0e3d7;
+      --grid: #dfe3d7;
+      --soft: #f0f2e9;
+      --yellow-soft: #fff6cd;
+      --hub: #fff5c4;
+      --prior: #a66b15;
+      --prior-soft: #fff1dc;
+      --next: #277b65;
+      --next-soft: #e4f4ec;
+      --spoke: #b9bfaa;
+      --shadow: 0 8px 30px #25271f08;
+      --display: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif;
+      --body: 'Segoe UI', Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
-
-    * {
-      box-sizing: border-box;
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --paper: #171a15;
+      --surface: #22261e;
+      --canvas: #1b1f18;
+      --ink: #f1f3e9;
+      --muted: #b1b8a3;
+      --line: #3a4033;
+      --grid: #343b2c;
+      --soft: #2c3225;
+      --yellow-soft: #3c3516;
+      --hub: #383419;
+      --prior: #efb562;
+      --prior-soft: #3b2e1b;
+      --next: #82d6b5;
+      --next-soft: #1e3b30;
+      --spoke: #616a50;
+      --shadow: 0 8px 30px #00000018;
     }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      min-width: 280px;
       color: var(--ink);
-      background-color: var(--paper);
-      background-image:
-        linear-gradient(var(--line-soft) 1px, transparent 1px),
-        linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
-      background-size: 24px 24px;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.45;
+      background: var(--paper);
+      font-family: var(--body);
+      line-height: 1.5;
       -webkit-font-smoothing: antialiased;
     }
-
-    button,
-    a {
-      -webkit-tap-highlight-color: transparent;
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; opacity: .38; }
+    button, a { touch-action: manipulation; }
+    button:focus-visible, a:focus-visible, summary:focus-visible, .map-viewport:focus-visible {
+      outline: 3px solid var(--prior);
+      outline-offset: 4px;
     }
-
-    button {
-      font: inherit;
-    }
-
-    .page-header {
-      position: relative;
-      overflow: hidden;
-      padding: clamp(28px, 5vw, 62px) max(20px, env(safe-area-inset-left)) 34px;
-      color: #f8fbf9;
-      background:
-        radial-gradient(circle at 86% 14%, rgba(130, 196, 198, 0.28), transparent 28%),
-        linear-gradient(130deg, #102f40, #18475c 70%, #1d5d6a);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-    }
-
-    .page-header::after {
-      content: "";
+    button svg, a svg { width: 18px; height: 18px; flex: 0 0 auto; }
+    .sr-only {
       position: absolute;
-      width: 310px;
-      height: 310px;
-      right: -120px;
-      bottom: -220px;
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      border-radius: 50%;
-      box-shadow:
-        0 0 0 34px rgba(255, 255, 255, 0.035),
-        0 0 0 68px rgba(255, 255, 255, 0.025);
-      pointer-events: none;
-    }
-
-    .header-inner,
-    .content,
-    .footer-inner {
-      width: min(100%, 1540px);
-      margin-inline: auto;
-    }
-
-    .eyebrow {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 0 0 14px;
-      color: #b9d9dc;
-      font-size: 0.76rem;
-      font-weight: 800;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
-
-    .eyebrow::before {
-      content: "";
-      width: 34px;
-      height: 2px;
-      background: #edb95e;
-      border-radius: 99px;
-    }
-
-    h1 {
-      max-width: 920px;
-      margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(2rem, 5vw, 4.4rem);
-      font-weight: 600;
-      line-height: 0.98;
-      letter-spacing: -0.035em;
-      text-wrap: balance;
-    }
-
-    .subtitle {
-      max-width: 780px;
-      margin: 18px 0 0;
-      color: #d9e9e8;
-      font-size: clamp(0.98rem, 2vw, 1.16rem);
-    }
-
-    .stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 9px;
-      margin-top: 24px;
-    }
-
-    .stat {
-      display: inline-flex;
-      align-items: center;
-      min-height: 34px;
-      padding: 7px 12px;
-      color: #f8fbf9;
-      background: rgba(255, 255, 255, 0.09);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 999px;
-      font-size: 0.82rem;
-      font-weight: 750;
-      backdrop-filter: blur(8px);
-    }
-
-    .content {
-      padding: 24px max(16px, env(safe-area-inset-left)) 52px;
-    }
-
-    .guide {
-      display: grid;
-      grid-template-columns: minmax(280px, 1fr) auto;
-      gap: 18px 28px;
-      align-items: center;
-      margin-bottom: 18px;
-      padding: 17px 19px;
-      background: rgba(255, 253, 247, 0.88);
-      border: 1px solid rgba(22, 49, 62, 0.13);
-      border-radius: var(--radius);
-      box-shadow: 0 8px 24px rgba(31, 50, 58, 0.06);
-      backdrop-filter: blur(8px);
-    }
-
-    .guide-copy {
-      margin: 0;
-      color: #405660;
-      font-size: 0.94rem;
-    }
-
-    .guide-copy strong {
-      color: var(--ink);
-    }
-
-    .desktop-copy {
-      display: inline;
-    }
-
-    .mobile-copy {
-      display: none;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 8px 14px;
-      color: var(--muted);
-      font-size: 0.78rem;
-      font-weight: 700;
-    }
-
-    .legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
       white-space: nowrap;
+      border: 0;
     }
-
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      box-shadow: 0 0 0 3px rgba(22, 49, 62, 0.05);
-    }
-
-    .legend-dot.prior {
-      background: var(--amber);
-    }
-
-    .legend-dot.current {
-      background: var(--violet);
-    }
-
-    .legend-dot.next {
-      background: var(--teal);
-    }
-
-    .selection-panel {
-      position: sticky;
-      top: 12px;
-      z-index: 20;
+    [hidden] { display: none !important; }
+    .wrap { width: min(1400px, calc(100% - 80px)); margin-inline: auto; }
+    .page-header { background: var(--surface); border-bottom: 1px solid var(--line); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 25px 0; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark {
       display: grid;
-      grid-template-columns: minmax(240px, 1.1fr) minmax(280px, 1fr) auto;
-      gap: 18px;
-      align-items: center;
-      margin: 0 0 18px;
-      padding: 16px 18px;
-      background: rgba(255, 253, 247, 0.96);
-      border: 1px solid rgba(114, 86, 165, 0.34);
-      border-left: 5px solid var(--violet);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(12px);
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      color: #25271f;
+      background: var(--yellow);
+      border-radius: 12px;
     }
-
-    .selection-panel[hidden] {
-      display: none;
-    }
-
-    .selection-kicker {
-      display: block;
-      margin-bottom: 3px;
-      color: var(--violet);
-      font-size: 0.7rem;
-      font-weight: 850;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-
-    .selection-title {
-      margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(1.05rem, 2vw, 1.32rem);
-      line-height: 1.14;
-    }
-
-    .selection-meta {
-      margin: 5px 0 0;
-      color: var(--muted);
-      font-size: 0.8rem;
-      font-weight: 700;
-    }
-
-    .relation-summary {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .relation-box {
-      min-width: 0;
-      padding: 9px 11px;
-      border-radius: 11px;
-      font-size: 0.76rem;
-    }
-
-    .relation-box.prior {
-      color: #784d0b;
-      background: var(--amber-soft);
-    }
-
-    .relation-box.next {
-      color: #086657;
-      background: var(--teal-soft);
-    }
-
-    .relation-box b {
-      display: block;
-      margin-bottom: 2px;
-      font-size: 1rem;
-    }
-
-    .clear-button {
+    .brand-mark svg { width: 26px; height: 26px; }
+    .brand-name { font-weight: 800; font-size: .9rem; letter-spacing: .04em; }
+    .brand-campus { display: block; color: var(--muted); font-size: .7rem; font-weight: 500; letter-spacing: .015em; }
+    .theme-button, .plain-button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 92px;
+      gap: 8px;
       min-height: 44px;
-      padding: 9px 13px;
+      padding: 9px 14px;
       color: var(--ink);
-      background: transparent;
-      border: 1px solid rgba(22, 49, 62, 0.22);
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 0.8rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-weight: 650;
+      font-size: .78rem;
+    }
+    .theme-button:hover, .plain-button:hover { background: var(--soft); }
+    .sun-icon { display: none; }
+    [data-theme="dark"] .sun-icon { display: block; }
+    [data-theme="dark"] .moon-icon { display: none; }
+    .hero { position: relative; padding: 25px 0 37px; }
+    .hero-copy { max-width: 890px; }
+    .eyebrow { display: flex; align-items: center; gap: 9px; margin: 0 0 15px; font-size: .69rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .eyebrow::before { content: ''; width: 7px; height: 7px; background: var(--yellow); border: 1px solid #ad891b; border-radius: 2px; }
+    .matrix-tag { padding: 4px 9px; color: var(--ink); background: var(--yellow-soft); border-radius: 5px; letter-spacing: .09em; }
+    h1 {
+      margin: 0;
+      font-family: var(--display);
+      font-size: clamp(2.45rem, 5.6vw, 4.6rem);
       font-weight: 800;
-      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+      line-height: 1.08;
+      letter-spacing: -.055em;
+      text-wrap: balance;
     }
-
-    .clear-button:hover {
-      background: #f0ece3;
-      border-color: rgba(22, 49, 62, 0.38);
+    .subtitle { max-width: 800px; margin: 16px 0 0; color: var(--muted); font-size: clamp(.9rem, 1.3vw, 1rem); line-height: 1.65; }
+    .stats { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; margin-top: 26px; }
+    .stat { display: inline-flex; gap: 7px; align-items: baseline; font-size: .8rem; color: var(--muted); }
+    .stat strong { color: var(--ink); font-size: 1.05rem; font-weight: 800; }
+    .stat + .stat { border-left: 1px solid var(--line); padding-left: 24px; }
+    .content { padding-top: 30px; padding-bottom: 30px; }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    h2 { font-family: var(--display); font-size: 1.25rem; letter-spacing: -.025em; margin: 0; line-height: 1.3; }
+    .guide-copy { color: var(--muted); font-size: .8rem; margin: 6px 0 0; }
+    .legend { display: flex; flex-wrap: wrap; gap: 9px 16px; font-size: .71rem; color: var(--muted); }
+    .legend-item { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+    .legend-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; }
+    .legend-dot.prior { background: var(--prior); }
+    .legend-dot.current { background: var(--yellow); border: 1px solid #ae8d17; border-radius: 2px; }
+    .legend-dot.next { background: var(--next); }
+    .map-shell { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+    .map-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+    .period-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-width: 0; }
+    .period-caption { color: var(--muted); font-size: .7rem; font-weight: 700; margin-right: 7px; }
+    .period-button {
+      min-width: 42px;
+      min-height: 42px;
+      padding: 7px 10px;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      font-size: .8rem;
+      font-weight: 750;
     }
-
-    .clear-button:active {
-      transform: scale(0.97);
-    }
-
+    .period-button:hover { color: var(--ink); background: var(--soft); }
+    .period-button.is-active { color: #25271f; background: var(--yellow); border-color: var(--yellow); }
+    .period-button.is-related { border-color: var(--line); color: var(--ink); background: var(--yellow-soft); }
+    .toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .plain-button.is-active { background: var(--yellow-soft); border-color: var(--yellow); }
     .map-viewport {
       position: relative;
-      overflow: auto;
-      overscroll-behavior-inline: contain;
-      padding: 6px 6px 18px;
-      background: rgba(255, 253, 247, 0.58);
-      border: 1px solid rgba(22, 49, 62, 0.14);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-      scrollbar-width: thin;
-      scrollbar-color: #8aa0a7 transparent;
-    }
-
-    .map-stage {
-      position: relative;
-      width: max-content;
-      min-width: 100%;
-      isolation: isolate;
-    }
-
-    .period-grid {
-      position: relative;
-      z-index: 2;
-      display: grid;
-      grid-template-columns: repeat(10, minmax(196px, 1fr));
-      gap: 26px;
-      min-width: 2220px;
-      padding: 14px;
-    }
-
-    .connections {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      overflow: visible;
-      pointer-events: none;
-    }
-
-    .edge {
-      fill: none;
-      stroke: rgba(71, 94, 103, 0.25);
-      stroke-width: 1.25;
-      stroke-linecap: round;
-      transition: opacity 180ms ease, stroke 180ms ease, stroke-width 180ms ease;
-    }
-
-    .edge.is-dimmed {
-      opacity: 0.08;
-    }
-
-    .edge.is-prereq {
-      stroke: var(--amber);
-      stroke-width: 2.4;
-      opacity: 0.95;
-    }
-
-    .edge.is-unlocked {
-      stroke: var(--teal);
-      stroke-width: 2.4;
-      opacity: 0.95;
-    }
-
-    .period-column {
-      position: relative;
-      min-width: 0;
-      padding: 12px 10px 14px;
-      background: rgba(248, 246, 239, 0.72);
-      border: 1px solid rgba(22, 49, 62, 0.10);
-      border-radius: 17px;
-    }
-
-    .period-heading {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      margin: 0 2px 13px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid rgba(22, 49, 62, 0.12);
-    }
-
-    .period-number {
-      display: inline-grid;
-      place-items: center;
-      width: 32px;
-      height: 32px;
-      flex: 0 0 auto;
-      color: #fff;
-      background: var(--blueprint);
-      border-radius: 9px 9px 9px 2px;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 1rem;
-      font-weight: 700;
-      box-shadow: 0 5px 12px rgba(18, 54, 74, 0.18);
-    }
-
-    .period-label {
-      min-width: 0;
-    }
-
-    .period-label strong {
-      display: block;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 0.98rem;
-      line-height: 1.05;
-    }
-
-    .period-label small {
-      color: var(--muted);
-      font-size: 0.69rem;
-      font-weight: 700;
-    }
-
-    .course-list {
-      display: grid;
-      gap: 10px;
-    }
-
-    .course-card {
-      --type-color: #557a8b;
-      position: relative;
-      width: 100%;
-      min-height: 96px;
+      height: clamp(560px, 75svh, 760px);
+      min-height: 400px;
       overflow: hidden;
-      padding: 13px 12px 12px 15px;
+      isolation: isolate;
+      background-color: var(--canvas);
+      background-image: radial-gradient(var(--grid) 1px, transparent 1px);
+      background-size: 20px 20px;
+      border-radius: 0 0 18px 18px;
+      cursor: grab;
+      touch-action: none;
+      overscroll-behavior: contain;
+    }
+    .map-viewport.is-dragging { cursor: grabbing; user-select: none; }
+    .map-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+    .map-viewport.is-animating .map-stage { transition: transform 230ms ease; }
+    .connections { position: absolute; inset: 0; z-index: 0; overflow: visible; pointer-events: none; }
+    .nodes-layer { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+    .orbit { fill: none; stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 9; vector-effect: non-scaling-stroke; }
+    .spoke { fill: none; stroke: var(--spoke); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+    .spoke.is-prereq { stroke: var(--prior); opacity: .6; }
+    .spoke.is-unlocked { stroke: var(--next); opacity: .6; }
+    .spoke.is-selected { stroke: #b3962b; stroke-width: 1.8; }
+    .dependency-edge { fill: none; stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+    .dependency-edge.is-prereq { stroke: var(--prior); }
+    .dependency-edge.is-unlocked { stroke: var(--next); }
+    .period-hub {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 184px;
+      height: 112px;
+      padding: 12px 10px;
+      text-align: center;
+      color: var(--ink);
+      background: var(--hub);
+      border: 1.5px solid #cbb347;
+      border-radius: 18px;
+      box-shadow: 0 6px 20px #6e60230b;
+      pointer-events: auto;
+    }
+    .hub-kicker { font-size: 9px; font-weight: 800; letter-spacing: .14em; color: var(--muted); }
+    .period-hub strong { margin: 4px 0; font-family: var(--display); font-size: 22px; font-weight: 800; line-height: 1.2; letter-spacing: -.04em; }
+    .hub-meta { font-size: 11px; color: var(--muted); font-weight: 600; }
+    .hub-chain-count { position: absolute; bottom: -12px; padding: 2px 9px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 20px; font-size: 10px; font-weight: 650; white-space: nowrap; }
+    .course-card {
+      position: absolute;
+      width: 218px;
+      height: 114px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding: 14px 15px;
       color: var(--ink);
       text-align: left;
-      background: var(--paper-strong);
-      border: 1px solid rgba(22, 49, 62, 0.16);
+      background: var(--surface);
+      border: 1px solid var(--line);
       border-radius: 13px;
-      box-shadow: 0 5px 13px rgba(31, 50, 58, 0.055);
-      cursor: pointer;
-      transition:
-        transform 170ms ease,
-        border-color 170ms ease,
-        background 170ms ease,
-        opacity 170ms ease,
-        box-shadow 170ms ease;
+      box-shadow: 0 4px 12px #20271906;
+      pointer-events: auto;
+      touch-action: none;
+      transition: background 160ms, border-color 160ms, box-shadow 160ms;
     }
-
-    .course-card::before {
-      content: "";
+    .course-card:hover { border-color: #b4a44b; box-shadow: 0 0 0 2px #d9bd3820, 0 6px 20px #242b1b0b; }
+    .course-code-row { display: flex; align-items: center; justify-content: space-between; gap: 7px; margin-bottom: 8px; width: 100%; }
+    .course-code { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .065em; }
+    .course-hours { color: var(--muted); font-size: 10px; font-weight: 650; white-space: nowrap; }
+    .course-name { font-size: 14px; font-weight: 700; line-height: 1.3; }
+    .course-card.is-selected { color: #25271f; background: var(--yellow); border: 2px solid #a98a1e; padding: 13px 14px; box-shadow: 0 0 0 5px #ffd32c24; }
+    .course-card.is-selected .course-code, .course-card.is-selected .course-hours { color: #5e511d; }
+    .course-card.is-prereq { background: var(--prior-soft); border-color: var(--prior); border-left-width: 4px; padding-left: 12px; }
+    .course-card.is-unlocked { background: var(--next-soft); border-color: var(--next); border-left-width: 4px; padding-left: 12px; }
+    .map-status {
       position: absolute;
-      inset: 0 auto 0 0;
-      width: 4px;
-      background: var(--type-color);
-      border-radius: 13px 0 0 13px;
-      transition: width 170ms ease, background 170ms ease;
-    }
-
-    .course-card[data-type="basica"] {
-      --type-color: #347ca0;
-    }
-
-    .course-card[data-type="profissional"] {
-      --type-color: #c66b3d;
-    }
-
-    .course-card[data-type="humanistica"] {
-      --type-color: #8a6ba6;
-    }
-
-    .course-card[data-type="comum"] {
-      --type-color: #3e928d;
-    }
-
-    .course-card[data-type="estagio"],
-    .course-card[data-type="atividade"],
-    .course-card[data-type="tcc"] {
-      --type-color: #738943;
-    }
-
-    .course-card:hover {
-      z-index: 3;
-      transform: translateY(-2px);
-      border-color: rgba(22, 49, 62, 0.34);
-      box-shadow: 0 10px 23px rgba(31, 50, 58, 0.11);
-    }
-
-    .course-card:focus-visible,
-    .clear-button:focus-visible,
-    .source-link:focus-visible {
-      outline: 3px solid rgba(30, 82, 105, 0.33);
-      outline-offset: 3px;
-    }
-
-    .course-code-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .course-code {
-      color: var(--blueprint-2);
-      font-size: 0.7rem;
-      font-weight: 900;
-      letter-spacing: 0.08em;
-    }
-
-    .course-hours {
-      flex: 0 0 auto;
+      top: 18px;
+      left: 18px;
+      z-index: 4;
+      max-width: calc(100% - 36px);
+      padding: 7px 11px;
       color: var(--muted);
-      font-size: 0.67rem;
-      font-weight: 800;
-    }
-
-    .course-name {
-      display: block;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 0.91rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      font-size: .67rem;
       font-weight: 700;
-      line-height: 1.16;
+      pointer-events: none;
+      box-shadow: 0 2px 8px #00000004;
     }
-
-    .course-card.is-selected {
-      color: #34235b;
-      background: var(--violet-soft);
-      border-color: var(--violet);
-      box-shadow: 0 0 0 2px rgba(114, 86, 165, 0.15), 0 10px 22px rgba(74, 52, 121, 0.16);
-      transform: translateY(-2px);
-    }
-
-    .course-card.is-selected::before {
-      width: 6px;
-      background: var(--violet);
-    }
-
-    .course-card.is-prereq {
-      color: #68420b;
-      background: var(--amber-soft);
-      border-color: rgba(210, 138, 29, 0.82);
-    }
-
-    .course-card.is-prereq::before {
-      width: 5px;
-      background: var(--amber);
-    }
-
-    .course-card.is-unlocked {
-      color: #075e52;
-      background: var(--teal-soft);
-      border-color: rgba(22, 136, 120, 0.76);
-    }
-
-    .course-card.is-unlocked::before {
-      width: 5px;
-      background: var(--teal);
-    }
-
-    .course-card.is-dimmed {
-      opacity: 0.27;
-      filter: saturate(0.5);
-    }
-
-    .course-card.is-dimmed:hover {
-      opacity: 0.68;
-    }
-
-    .map-note {
-      margin: 14px 4px 0;
-      color: var(--muted);
-      font-size: 0.76rem;
-    }
-
-    .page-footer {
-      padding: 25px max(20px, env(safe-area-inset-left)) max(34px, env(safe-area-inset-bottom));
-      color: #d6e2e2;
-      background: var(--blueprint);
-    }
-
-    .footer-inner {
+    .map-status strong { color: var(--ink); }
+    .map-controls {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      z-index: 5;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-    }
-
-    .footer-copy {
-      margin: 0;
-      font-size: 0.78rem;
-    }
-
-    .source-link {
-      color: #fff;
-      font-size: 0.78rem;
-      font-weight: 800;
-      text-underline-offset: 3px;
-    }
-
-    noscript {
-      display: block;
-      margin: 20px;
-      padding: 16px;
-      color: #721c24;
-      background: #f8d7da;
+      gap: 4px;
+      padding: 5px;
+      background: var(--surface);
+      border: 1px solid var(--line);
       border-radius: 12px;
+      box-shadow: 0 4px 15px #00000008;
+      cursor: default;
     }
-
-    @media (max-width: 900px) {
-      .guide {
-        grid-template-columns: 1fr;
-      }
-
-      .legend {
-        justify-content: flex-start;
-      }
-
-      .desktop-copy {
-        display: none;
-      }
-
-      .mobile-copy {
-        display: inline;
-      }
-
-      .map-viewport {
-        overflow: visible;
-        padding: 0;
-        background: transparent;
-        border: 0;
-        box-shadow: none;
-      }
-
-      .map-stage {
-        width: 100%;
-      }
-
-      .period-grid {
-        grid-template-columns: 1fr;
-        gap: 14px;
-        min-width: 0;
-        padding: 0;
-      }
-
-      .connections {
-        display: none;
-      }
-
-      .period-column {
-        padding: 13px;
-        background: rgba(255, 253, 247, 0.78);
-        box-shadow: 0 7px 20px rgba(31, 50, 58, 0.06);
-      }
-
-      .course-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .selection-panel {
-        position: fixed;
-        inset: auto 12px calc(12px + env(safe-area-inset-bottom)) 12px;
-        z-index: 50;
-        grid-template-columns: 1fr auto;
-        max-height: min(44vh, 330px);
-        overflow: auto;
-        margin: 0;
-        padding: 14px;
-        border-left-width: 4px;
-        box-shadow: 0 18px 55px rgba(17, 43, 55, 0.30);
-      }
-
-      .relation-summary {
-        grid-column: 1 / -1;
-        grid-row: 2;
-      }
-
-      body.has-selection {
-        padding-bottom: 178px;
-      }
+    .zoom-button { display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 8px; color: var(--ink); background: transparent; }
+    .zoom-button:hover:not(:disabled) { background: var(--soft); }
+    .zoom-button svg { width: 17px; height: 17px; }
+    .zoom-level { width: 52px; font-size: .7rem; font-weight: 750; }
+    .controls-divider { width: 1px; height: 20px; margin: 0 3px; background: var(--line); }
+    .map-hint { position: absolute; left: 19px; bottom: 23px; z-index: 4; margin: 0; color: var(--muted); font-size: .65rem; pointer-events: none; }
+    .mobile-hint { display: none; }
+    .selection-panel { padding: 22px; border-top: 1px solid var(--line); border-radius: 0 0 18px 18px; }
+    .map-shell:has(.selection-panel:not([hidden])) .map-viewport { border-radius: 0; }
+    .selection-main { display: grid; grid-template-columns: minmax(180px, 1fr) auto auto; align-items: center; gap: 18px; }
+    .selection-kicker { color: var(--muted); font-size: .64rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+    .selection-title { margin: 5px 0 0; font-family: var(--display); font-size: 1.05rem; line-height: 1.35; }
+    .selection-meta { margin: 5px 0 0; font-size: .72rem; color: var(--muted); }
+    .relation-summary { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+    .relation-box { color: var(--muted); font-size: .69rem; }
+    .relation-box b { display: block; font-size: 1.3rem; line-height: 1.25; font-weight: 800; }
+    .relation-box.prior b { color: var(--prior); }
+    .relation-box.next b { color: var(--next); }
+    .selection-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .primary-button { color: #25271f; background: var(--yellow); border-color: var(--yellow); }
+    .primary-button:hover { background: var(--yellow-hover); }
+    .relation-details { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .relation-details summary { color: var(--muted); cursor: pointer; font-size: .73rem; width: fit-content; }
+    .relation-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; margin-top: 12px; }
+    .relation-column-title { margin: 0 0 7px; font-size: .7rem; font-weight: 750; }
+    .relation-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .relation-chip { text-align: left; padding: 7px 10px; min-height: 36px; max-width: 100%; color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 7px; font-size: .7rem; }
+    .relation-chip:hover { border-color: var(--prior); }
+    .empty-relation { color: var(--muted); font-size: .72rem; }
+    .selection-note { margin: 12px 0 0; color: var(--muted); font-size: .68rem; }
+    .map-note { margin: 14px 2px 0; color: var(--muted); font-size: .69rem; }
+    .page-footer { padding: 18px 0 24px; color: var(--muted); }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid var(--line); padding-top: 20px; }
+    .footer-copy { margin: 0; font-size: .7rem; }
+    .source-link { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-size: .7rem; font-weight: 700; text-decoration: none; }
+    .source-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+    .source-link svg { width: 13px; height: 13px; }
+    noscript { display: block; padding: 20px; background: var(--yellow-soft); border-radius: 12px; }
+    @media (min-width: 1500px) { .hero-copy { max-width: 1000px; } .hero { padding-bottom: 43px; } }
+    @media (max-width: 1100px) {
+      .wrap { width: calc(100% - 48px); }
+      .section-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+      .map-toolbar { gap: 10px; padding: 12px; }
+      .period-button { min-width: 40px; }
+      .selection-main { grid-template-columns: minmax(160px, 1fr) auto; }
+      .selection-actions { grid-column: 1 / -1; }
     }
-
-    @media (max-width: 560px) {
-      .page-header {
-        padding-top: 30px;
-        padding-bottom: 28px;
-      }
-
-      h1 {
-        font-size: clamp(2rem, 11vw, 3rem);
-      }
-
-      .content {
-        padding-top: 16px;
-      }
-
-      .guide {
-        padding: 15px;
-        border-radius: 15px;
-      }
-
-      .legend {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .course-list {
-        grid-template-columns: 1fr;
-      }
-
-      .course-card {
-        min-height: 86px;
-      }
-
-      .footer-inner {
-        align-items: flex-start;
-        flex-direction: column;
-      }
+    @media (max-width: 700px) {
+      .wrap { width: calc(100% - 32px); }
+      .topbar { padding: 19px 0; }
+      .brand-mark { width: 38px; height: 38px; border-radius: 10px; }
+      .brand-name { font-size: .8rem; }
+      .brand-campus { font-size: .65rem; }
+      .theme-button { width: 42px; padding: 10px; flex-shrink: 0; }
+      .theme-label { display: none; }
+      .hero { padding: 16px 0 28px; }
+      .eyebrow { font-size: .62rem; gap: 7px; margin-bottom: 13px; }
+      h1 { font-size: clamp(2.2rem, 9.4vw, 3.4rem); }
+      .subtitle { margin-top: 13px; font-size: .86rem; }
+      .stats { gap: 9px 14px; margin-top: 22px; }
+      .stat { gap: 5px; font-size: .67rem; }
+      .stat strong { font-size: .91rem; }
+      .stat + .stat { padding-left: 14px; }
+      .content { padding-top: 23px; }
+      h2 { font-size: 1.15rem; }
+      .guide-copy { font-size: .75rem; max-width: 380px; }
+      .legend { gap: 8px 14px; font-size: .65rem; }
+      .map-shell { border-radius: 14px; }
+      .map-toolbar { padding: 11px; gap: 9px; }
+      .period-navigation { gap: 4px; width: 100%; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .period-caption { display: none; }
+      .period-button { padding: 7px; min-width: 0; min-height: 44px; border-color: var(--line); }
+      .toolbar-actions { width: 100%; }
+      .toolbar-actions .plain-button { flex: 1; font-size: .72rem; padding: 8px 10px; }
+      .map-viewport { height: clamp(560px, 75svh, 720px); min-height: 440px; border-radius: 0 0 14px 14px; }
+      .period-hub { width: 160px; height: 100px; border-radius: 14px; }
+      .period-hub strong { font-size: 21px; }
+      .hub-meta { font-size: 10px; }
+      .course-card { width: 148px; height: 116px; padding: 11px 10px; }
+      .course-card.is-selected { padding: 10px 9px; }
+      .course-card.is-prereq, .course-card.is-unlocked { padding-left: 7px; }
+      .course-name { font-size: 12px; line-height: 1.35; }
+      .course-code, .course-hours { font-size: 9px; }
+      .course-code-row { margin-bottom: 7px; }
+      .map-status { top: 12px; left: 12px; max-width: calc(100% - 24px); font-size: .6rem; padding: 6px 9px; }
+      .map-controls { right: 12px; bottom: 14px; padding: 4px; }
+      .zoom-button { width: 36px; height: 40px; }
+      .zoom-level { width: 46px; }
+      .map-hint { left: 12px; bottom: 72px; font-size: .6rem; }
+      .desktop-hint { display: none; }
+      .mobile-hint { display: inline; }
+      .selection-panel { padding: 17px 14px; }
+      .selection-main { grid-template-columns: 1fr; gap: 14px; }
+      .selection-title { font-size: 1rem; }
+      .relation-summary { gap: 12px 28px; }
+      .selection-actions { grid-column: auto; }
+      .selection-actions .plain-button { flex: 1; padding-inline: 9px; font-size: .73rem; }
+      .relation-columns { grid-template-columns: 1fr; }
+      .map-note { font-size: .65rem; line-height: 1.7; }
+      .footer-inner { flex-direction: column; align-items: flex-start; gap: 12px; }
     }
-
+    @media (max-width: 360px) {
+      .wrap { width: calc(100% - 24px); }
+      .stats { gap: 8px 10px; }
+      .stat + .stat { padding-left: 10px; }
+      .stat { font-size: .6rem; }
+      .legend { gap: 8px 11px; font-size: .61rem; }
+      .map-controls { gap: 1px; }
+    }
     @media (prefers-reduced-motion: reduce) {
-      html {
-        scroll-behavior: auto;
-      }
-
-      *,
-      *::before,
-      *::after {
-        transition-duration: 0.01ms !important;
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-      }
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; }
     }
-
     @media print {
-      body {
-        background: #fff;
-      }
-
-      .page-header {
-        color: #000;
-        background: #fff;
-        border-bottom: 2px solid #000;
-      }
-
-      .subtitle,
-      .eyebrow,
-      .stat {
-        color: #000;
-      }
-
-      .guide,
-      .selection-panel,
-      .connections,
-      .page-footer {
-        display: none !important;
-      }
-
-      .content {
-        width: 100%;
-        padding: 14px 0;
-      }
-
-      .map-viewport {
-        overflow: visible;
-        border: 0;
-        box-shadow: none;
-      }
-
-      .map-stage {
-        width: 100%;
-      }
-
-      .period-grid {
-        grid-template-columns: repeat(2, 1fr);
-        min-width: 0;
-      }
-
-      .course-card {
-        break-inside: avoid;
-        box-shadow: none;
-      }
+      .theme-button, .toolbar-actions, .map-controls, .map-hint, .selection-actions, .relation-details { display: none !important; }
+      .wrap { width: 100%; }
+      .page-header, body { color: #000; background: #fff; }
+      .map-viewport { height: 650px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .page-footer { padding-bottom: 0; }
     }
   </style>
 </head>
 <body>
   <header class="page-header">
-    <div class="header-inner">
-      <p class="eyebrow">UTFPR · Campus Pato Branco</p>
-      <h1>Mapa da Matriz 636</h1>
-      <p class="subtitle">Engenharia Civil — disciplinas obrigatórias organizadas por período e conectadas pela cadeia de pré-requisitos.</p>
-      <div class="stats" aria-label="Resumo da matriz">
-        <span class="stat">62 componentes obrigatórios</span>
-        <span class="stat">3.660 horas</span>
-        <span class="stat">10 períodos</span>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 24h20M7 24V9l8-5v20M15 11l6 3v10M10.5 11v1M10.5 16v1M10.5 21v1M18 16v1M18 21v1"/></svg></span>
+          <div class="brand-name">UTFPR<span class="brand-campus">Campus Pato Branco</span></div>
+        </div>
+        <button class="theme-button" id="themeToggle" type="button" aria-pressed="false" aria-label="Ativar modo escuro" title="Ativar modo escuro">
+          <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20.3 14.2A8.8 8.8 0 0 1 9.8 3.7a8.8 8.8 0 1 0 10.5 10.5Z"/></svg>
+          <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></svg>
+          <span class="theme-label" id="themeLabel">Modo escuro</span>
+        </button>
+      </div>
+      <div class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="matrix-tag">Matriz 636</span> Graduação · mapa curricular</p>
+          <h1>Engenharia Civil</h1>
+          <p class="subtitle">Disciplinas obrigatórias organizadas por período e conectadas pela cadeia de pré-requisitos conforme a Matriz 636</p>
+          <div class="stats" aria-label="Resumo da matriz">
+            <span class="stat"><strong>62</strong> componentes</span>
+            <span class="stat"><strong>3.660</strong> horas</span>
+            <span class="stat"><strong>10</strong> períodos</span>
+          </div>
+        </div>
       </div>
     </div>
   </header>
 
-  <main class="content">
-    <section class="guide" aria-label="Como usar o mapa">
-      <p class="guide-copy">
-        <strong>Selecione uma disciplina</strong> para destacar toda a cadeia anterior de pré-requisitos e as matérias que ela libera posteriormente.
-        <span class="desktop-copy"> Arraste o mapa horizontalmente para percorrer os períodos.</span>
-        <span class="mobile-copy"> Role a página para percorrer os períodos.</span>
-      </p>
-      <div class="legend" aria-label="Legenda dos destaques">
-        <span class="legend-item"><span class="legend-dot prior"></span>Cadeia anterior</span>
-        <span class="legend-item"><span class="legend-dot current"></span>Selecionada</span>
-        <span class="legend-item"><span class="legend-dot next"></span>Libera depois</span>
-      </div>
-    </section>
-
-    <aside id="selectionPanel" class="selection-panel" aria-live="polite" hidden>
+  <main class="content wrap">
+    <div class="section-heading">
       <div>
-        <span class="selection-kicker" id="selectionCode"></span>
-        <h2 class="selection-title" id="selectionTitle"></h2>
-        <p class="selection-meta" id="selectionMeta"></p>
+        <h2>Um mapa, muitas conexões.</h2>
+        <p class="guide-copy">Escolha um período. Clique em uma disciplina para explorar sua cadeia.</p>
       </div>
-      <div class="relation-summary">
-        <div class="relation-box prior"><b id="priorCount">0</b><span>na cadeia anterior</span></div>
-        <div class="relation-box next"><b id="nextCount">0</b><span>liberadas depois</span></div>
+      <div class="legend" aria-label="Legenda das conexões">
+        <span class="legend-item"><span class="legend-dot prior" aria-hidden="true"></span>Cadeia anterior</span>
+        <span class="legend-item"><span class="legend-dot current" aria-hidden="true"></span>Selecionada</span>
+        <span class="legend-item"><span class="legend-dot next" aria-hidden="true"></span>Cadeia posterior</span>
       </div>
-      <button id="clearButton" class="clear-button" type="button" aria-label="Limpar seleção">Limpar</button>
-    </aside>
+    </div>
 
-    <section class="map-viewport" id="mapViewport" aria-label="Mapa das disciplinas por período">
-      <div class="map-stage" id="mapStage">
-        <svg class="connections" id="connections" aria-hidden="true"></svg>
-        <div class="period-grid" id="periodGrid"></div>
+    <section class="map-shell" aria-label="Explorador de disciplinas">
+      <div class="map-toolbar">
+        <nav class="period-navigation" id="periodNavigation" aria-label="Selecionar período"><span class="period-caption">Períodos</span></nav>
+        <div class="toolbar-actions">
+          <button type="button" class="plain-button" id="overviewButton" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="3" width="6" height="6" rx="1.5"/><rect x="15" y="3" width="6" height="6" rx="1.5"/><rect x="3" y="15" width="6" height="6" rx="1.5"/><rect x="15" y="15" width="6" height="6" rx="1.5"/></svg>Todos os períodos</button>
+          <button type="button" class="plain-button" id="clearButton" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>Limpar seleção</button>
+        </div>
       </div>
+      <div class="map-viewport" id="mapViewport" tabindex="0" role="region" aria-label="Mapa mental de disciplinas" aria-describedby="mapHelp">
+        <div class="map-stage" id="mapStage">
+          <svg class="connections" id="connections" aria-hidden="true"></svg>
+          <div class="nodes-layer" id="nodesLayer"></div>
+        </div>
+        <div class="map-status" id="mapStatus" role="status" aria-live="polite"></div>
+        <p class="map-hint" id="mapHelp"><span class="desktop-hint">Arraste para mover · role para ampliar · 0 para enquadrar</span><span class="mobile-hint">Arraste para mover · use dois dedos para ampliar</span></p>
+        <div class="map-controls" role="group" aria-label="Controles do mapa">
+          <button type="button" class="zoom-button" id="zoomOut" aria-label="Diminuir zoom" title="Zoom Out (−)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+          <button type="button" class="zoom-button zoom-level" id="zoomReset" aria-label="Definir zoom em 100%" title="Tamanho real (100%)"><span id="zoomLevel">100%</span></button>
+          <button type="button" class="zoom-button" id="zoomIn" aria-label="Aumentar zoom" title="Zoom In (+)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button>
+          <span class="controls-divider" aria-hidden="true"></span>
+          <button type="button" class="zoom-button" id="fitButton" aria-label="Enquadrar mapa" title="Enquadrar mapa (0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></button>
+        </div>
+      </div>
+
+      <aside class="selection-panel" id="selectionPanel" aria-label="Detalhes da disciplina selecionada" hidden>
+        <div class="selection-main">
+          <div>
+            <span class="selection-kicker" id="selectionCode"></span>
+            <h3 class="selection-title" id="selectionTitle"></h3>
+            <p class="selection-meta" id="selectionMeta"></p>
+          </div>
+          <div class="relation-summary">
+            <div class="relation-box prior"><b id="priorCount">0</b><span>na cadeia anterior</span></div>
+            <div class="relation-box next"><b id="nextCount">0</b><span>na cadeia posterior</span></div>
+          </div>
+          <div class="selection-actions">
+            <button type="button" class="plain-button primary-button" id="focusCourseButton">Focar disciplina</button>
+            <button type="button" class="plain-button" id="fitChainButton">Ver cadeia completa</button>
+          </div>
+        </div>
+        <details class="relation-details" id="relationDetails">
+          <summary>Ver conexões diretas</summary>
+          <div class="relation-columns">
+            <div><p class="relation-column-title">Pré-requisitos diretos</p><div class="relation-chips" id="directPrior"></div></div>
+            <div><p class="relation-column-title">Dependências diretas</p><div class="relation-chips" id="directNext"></div></div>
+          </div>
+        </details>
+        <p class="selection-note">As cadeias incluem relações diretas e indiretas. Disciplinas posteriores podem exigir outros pré-requisitos além da selecionada.</p>
+      </aside>
     </section>
-
     <p class="map-note">As disciplinas optativas dos grupos 785 e 786 e os registros de ENADE não fazem parte deste mapa.</p>
-    <noscript>Este mapa precisa do JavaScript ativado para exibir as disciplinas e suas relações.</noscript>
+    <noscript>Ative o JavaScript para explorar o mapa de disciplinas e suas conexões.</noscript>
   </main>
 
   <footer class="page-footer">
-    <div class="footer-inner">
+    <div class="footer-inner wrap">
       <p class="footer-copy">Engenharia Civil · Matriz 636 · UTFPR-PB</p>
-      <a class="source-link" href="https://www.utfpr.edu.br/cursos/coordenacoes/graduacao/pato-branco/pb-engenharia-civil/documentos/matrizes-curriculares-636.pdf/@@download/file" target="_blank" rel="noopener noreferrer">Consultar matriz oficial</a>
+      <a class="source-link" href="https://www.utfpr.edu.br/cursos/coordenacoes/graduacao/pato-branco/pb-engenharia-civil/documentos/matrizes-curriculares-636.pdf/@@download/file" target="_blank" rel="noopener noreferrer">Consultar matriz oficial<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M10 4H4v16h16v-6"/></svg></a>
     </div>
   </footer>
 
   <script>
-    "use strict";
-
+    'use strict';
     const COURSES = [
       { code: "EG41NB", name: "Expressão Gráfica", period: 1, hours: 60, type: "basica", prerequisites: [] },
       { code: "GA41NB", name: "Geometria Analítica", period: 1, hours: 60, type: "basica", prerequisites: [] },
@@ -933,277 +581,572 @@
       { code: "TC40CV", name: "Trabalho de Conclusão de Curso 2", period: 10, hours: 60, type: "tcc", prerequisites: ["TC49CV"] }
     ];
 
-    const courseByCode = new Map(COURSES.map(function(course) {
-      return [course.code, course];
+    const $ = id => document.getElementById(id);
+    const courseByCode = new Map(COURSES.map(course => [course.code, course]));
+    const prerequisitesByCode = new Map(COURSES.map(course => [course.code, course.prerequisites]));
+    const dependents = new Map(COURSES.map(course => [course.code, []]));
+    COURSES.forEach(course => course.prerequisites.forEach(code => {
+      if (!courseByCode.has(code)) throw new Error('Pré-requisito desconhecido: ' + code);
+      dependents.get(code).push(course.code);
     }));
-
-    const dependents = new Map(COURSES.map(function(course) {
-      return [course.code, []];
-    }));
-
-    COURSES.forEach(function(course) {
-      course.prerequisites.forEach(function(prerequisite) {
-        if (!courseByCode.has(prerequisite)) {
-          throw new Error("Pré-requisito desconhecido: " + prerequisite);
-        }
-        dependents.get(prerequisite).push(course.code);
-      });
-    });
-
-    const totalHours = COURSES.reduce(function(total, course) {
-      return total + course.hours;
-    }, 0);
-
-    if (COURSES.length !== 62 || totalHours !== 3660) {
-      throw new Error("Os dados da Matriz 636 estão incompletos.");
+    if (COURSES.length !== 62 || COURSES.reduce((sum, course) => sum + course.hours, 0) !== 3660) {
+      throw new Error('Os dados da Matriz 636 estão incompletos.');
     }
 
-    const periodGrid = document.getElementById("periodGrid");
-    const connections = document.getElementById("connections");
-    const mapStage = document.getElementById("mapStage");
-    const selectionPanel = document.getElementById("selectionPanel");
-    const selectionCode = document.getElementById("selectionCode");
-    const selectionTitle = document.getElementById("selectionTitle");
-    const selectionMeta = document.getElementById("selectionMeta");
-    const priorCount = document.getElementById("priorCount");
-    const nextCount = document.getElementById("nextCount");
-    const clearButton = document.getElementById("clearButton");
-
+    const viewport = $('mapViewport');
+    const stage = $('mapStage');
+    const nodesLayer = $('nodesLayer');
+    const connections = $('connections');
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const CARD = { width: 218, height: 114 };
+    const HUB = { width: 184, height: 112 };
+    const MIN_ZOOM = 0.12;
+    const MAX_ZOOM = 2.5;
+    const camera = { x: 0, y: 0, scale: 1 };
+    const positions = new Map();
+    const groups = [];
+    let activePeriod = 1;
+    let viewMode = 'period';
     let selectedCode = null;
-    let resizeTimer = null;
-
-    function pluralize(value, singular, plural) {
-      return value + " " + (value === 1 ? singular : plural);
-    }
+    let ancestors = new Set();
+    let descendants = new Set();
+    let sceneBounds = { x: 0, y: 0, width: 900, height: 620 };
+    let animationTimer;
+    let suppressClickUntil = 0;
+    let compactLayout = window.matchMedia('(max-width: 700px)').matches;
 
     function collectRelations(startCode, relationMap) {
       const result = new Set();
-      const pending = (relationMap.get(startCode) || []).slice();
-
+      const pending = [...(relationMap.get(startCode) || [])];
       while (pending.length) {
         const code = pending.pop();
-        if (result.has(code)) {
-          continue;
-        }
+        if (code === startCode || result.has(code)) continue;
         result.add(code);
-        (relationMap.get(code) || []).forEach(function(nextCode) {
-          pending.push(nextCode);
-        });
+        pending.push(...(relationMap.get(code) || []));
       }
-
       return result;
     }
 
-    function prerequisiteMap() {
-      return new Map(COURSES.map(function(course) {
-        return [course.code, course.prerequisites];
+    function relationClass(code) {
+      if (code === selectedCode) return 'is-selected';
+      if (ancestors.has(code)) return 'is-prereq';
+      if (descendants.has(code)) return 'is-unlocked';
+      return '';
+    }
+
+    function svgElement(tag, attributes) {
+      const element = document.createElementNS(SVG_NS, tag);
+      Object.entries(attributes || {}).forEach(([key, value]) => element.setAttribute(key, String(value)));
+      return element;
+    }
+
+    function makeCluster(period, courses) {
+      const count = courses.length;
+      const rx = count <= 2 ? 240 : count <= 5 ? 280 : count <= 6 ? 315 : count <= 8 ? 355 : 385;
+      const ry = count <= 2 ? 0 : count <= 5 ? 205 : count <= 6 ? 230 : count <= 8 ? 265 : 285;
+      let points;
+      if (compactLayout) {
+        // A narrow mind map keeps card text legible on phones. Its branches
+        // extend vertically when necessary; the canvas can still be panned.
+        const above = Math.ceil(count / 2);
+        const below = count - above;
+        const slots = [];
+        function addSide(total, direction) {
+          let remaining = total;
+          let row = 1;
+          while (remaining > 0) {
+            const pair = remaining > 1;
+            if (pair) slots.push({ x: -84, y: direction * row * 134 }, { x: 84, y: direction * row * 134 });
+            else slots.push({ x: 0, y: direction * row * 134 });
+            remaining -= pair ? 2 : 1;
+            row++;
+          }
+        }
+        addSide(above, -1);
+        addSide(below, 1);
+        slots.sort((a, b) => a.y - b.y || a.x - b.x);
+        points = courses.map((course, index) => ({ course, ...slots[index] }));
+      } else {
+        points = courses.map((course, index) => {
+          const angle = count === 1 ? 0 : count === 2 ? Math.PI * index : -Math.PI / 2 + index * Math.PI * 2 / count;
+          return { course, x: Math.cos(angle) * rx, y: Math.sin(angle) * ry };
+        });
+      }
+      const left = Math.min(-HUB.width / 2, ...points.map(point => point.x - CARD.width / 2));
+      const top = Math.min(-HUB.height / 2, ...points.map(point => point.y - CARD.height / 2));
+      const right = Math.max(HUB.width / 2, ...points.map(point => point.x + CARD.width / 2));
+      const bottom = Math.max(HUB.height / 2, ...points.map(point => point.y + CARD.height / 2));
+      const padding = compactLayout ? 10 : 28;
+      return {
+        period, courses, points, rx, ry,
+        center: { x: padding - left, y: padding - top },
+        width: right - left + padding * 2,
+        height: bottom - top + padding * 2
+      };
+    }
+
+    function currentCourses() {
+      if (viewMode === 'period') return COURSES.filter(course => course.period === activePeriod);
+      if (viewMode === 'chain') return COURSES.filter(course => course.code === selectedCode || ancestors.has(course.code) || descendants.has(course.code));
+      return COURSES;
+    }
+
+    function renderScene() {
+      compactLayout = window.matchMedia('(max-width: 700px)').matches;
+      CARD.width = compactLayout ? 148 : 218;
+      CARD.height = compactLayout ? 116 : 114;
+      HUB.width = compactLayout ? 160 : 184;
+      HUB.height = compactLayout ? 100 : 112;
+      const courses = currentCourses();
+      const visiblePeriods = [...new Set(courses.map(course => course.period))].sort((a, b) => a - b);
+      const clusters = visiblePeriods.map(period => makeCluster(period, courses.filter(course => course.period === period)));
+      // A compact grid keeps all periods available without horizontal scrollbars.
+      const gapX = compactLayout ? 48 : 70;
+      const gapY = compactLayout ? 60 : 85;
+      const margin = compactLayout ? 10 : 28;
+      // Choose the arrangement that gives the largest readable overview for
+      // the current viewport, rather than stretching every chain sideways.
+      let columns = 1;
+      let bestScale = 0;
+      for (let candidate = 1; candidate <= Math.min(compactLayout ? 2 : 4, clusters.length); candidate++) {
+        const candidateRows = Math.ceil(clusters.length / candidate);
+        const widths = Array.from({ length: candidate }, (_, col) => Math.max(...clusters.filter((_, i) => i % candidate === col).map(group => group.width)));
+        const heights = Array.from({ length: candidateRows }, (_, row) => Math.max(...clusters.slice(row * candidate, (row + 1) * candidate).map(group => group.height)));
+        const width = widths.reduce((sum, value) => sum + value, 0) + gapX * (candidate - 1) + margin * 2;
+        const height = heights.reduce((sum, value) => sum + value, 0) + gapY * (candidateRows - 1) + margin * 2;
+        const scale = Math.min((viewport.clientWidth - (compactLayout ? 24 : 88)) / width, (viewport.clientHeight - 128) / height);
+        if (scale > bestScale) { bestScale = scale; columns = candidate; }
+      }
+      const rows = Math.ceil(clusters.length / columns);
+      const colWidths = Array.from({ length: columns }, (_, col) => Math.max(...clusters.filter((_, i) => i % columns === col).map(group => group.width)));
+      const rowHeights = Array.from({ length: rows }, (_, row) => Math.max(...clusters.slice(row * columns, (row + 1) * columns).map(group => group.height)));
+      const colOffsets = colWidths.map((_, i) => margin + colWidths.slice(0, i).reduce((sum, value) => sum + value + gapX, 0));
+      const rowOffsets = rowHeights.map((_, i) => margin + rowHeights.slice(0, i).reduce((sum, value) => sum + value + gapY, 0));
+      const worldWidth = colWidths.reduce((sum, width) => sum + width, 0) + gapX * (columns - 1) + margin * 2;
+      const worldHeight = rowHeights.reduce((sum, height) => sum + height, 0) + gapY * (rows - 1) + margin * 2;
+      sceneBounds = { x: 0, y: 0, width: worldWidth, height: worldHeight };
+      stage.style.width = worldWidth + 'px';
+      stage.style.height = worldHeight + 'px';
+      connections.setAttribute('viewBox', '0 0 ' + worldWidth + ' ' + worldHeight);
+      connections.setAttribute('width', worldWidth);
+      connections.setAttribute('height', worldHeight);
+      connections.replaceChildren();
+      nodesLayer.replaceChildren();
+      positions.clear();
+      groups.length = 0;
+      addArrowMarkers();
+      const fragment = document.createDocumentFragment();
+
+      clusters.forEach((cluster, index) => {
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        const offsetX = colOffsets[col] + (colWidths[col] - cluster.width) / 2;
+        const offsetY = rowOffsets[row] + (rowHeights[row] - cluster.height) / 2;
+        const center = { x: offsetX + cluster.center.x, y: offsetY + cluster.center.y };
+        groups.push({ period: cluster.period, x: offsetX, y: offsetY, width: cluster.width, height: cluster.height, center });
+        if (!compactLayout && cluster.courses.length > 2) {
+          connections.appendChild(svgElement('ellipse', { class: 'orbit', cx: center.x, cy: center.y, rx: cluster.rx, ry: cluster.ry }));
+        }
+        const allPeriodCourses = COURSES.filter(course => course.period === cluster.period);
+        const hours = allPeriodCourses.reduce((sum, course) => sum + course.hours, 0);
+        const hub = document.createElement('div');
+        hub.className = 'period-hub';
+        hub.dataset.period = cluster.period;
+        hub.setAttribute('role', 'heading');
+        hub.setAttribute('aria-level', '3');
+        hub.style.left = center.x - HUB.width / 2 + 'px';
+        hub.style.top = center.y - HUB.height / 2 + 'px';
+        hub.innerHTML = '<span class="hub-kicker">MATRIZ 636</span><strong>' + cluster.period + 'º período</strong><span class="hub-meta">' + allPeriodCourses.length + ' componentes · ' + hours.toLocaleString('pt-BR') + ' h</span>' +
+          (viewMode === 'chain' ? '<span class="hub-chain-count">' + cluster.courses.length + ' nesta cadeia</span>' : '');
+        fragment.appendChild(hub);
+        cluster.points.forEach(point => {
+          const position = { x: center.x + point.x, y: center.y + point.y, width: CARD.width, height: CARD.height };
+          positions.set(point.course.code, position);
+          const from = anchor(center, position, HUB);
+          const to = anchor(position, center, CARD);
+          connections.appendChild(svgElement('path', { class: 'spoke ' + relationClass(point.course.code), d: curvedPath(from, to) }));
+          fragment.appendChild(makeCard(point.course, position));
+        });
+      });
+      if (viewMode === 'chain') drawDependencyEdges();
+      nodesLayer.appendChild(fragment);
+      updateNavigation();
+      updateStatus();
+      fitScene(false);
+    }
+
+    function makeCard(course, position) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'course-card ' + relationClass(course.code);
+      card.dataset.code = course.code;
+      card.dataset.type = course.type;
+      card.style.left = position.x - CARD.width / 2 + 'px';
+      card.style.top = position.y - CARD.height / 2 + 'px';
+      card.setAttribute('aria-pressed', String(course.code === selectedCode));
+      const relation = course.code === selectedCode ? ', selecionada' : ancestors.has(course.code) ? ', cadeia anterior' : descendants.has(course.code) ? ', cadeia posterior' : '';
+      card.setAttribute('aria-label', course.name + ', ' + course.code + ', ' + course.hours + ' horas, ' + course.period + 'º período' + relation);
+      card.innerHTML = '<span class="course-code-row"><span class="course-code">' + course.code + '</span><span class="course-hours">' + course.hours + ' h</span></span><span class="course-name">' + course.name + '</span>';
+      return card;
+    }
+
+    function anchor(from, to, size) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const ratio = Math.min((size.width / 2 + 2) / Math.max(Math.abs(dx), .001), (size.height / 2 + 2) / Math.max(Math.abs(dy), .001));
+      return { x: from.x + dx * ratio, y: from.y + dy * ratio };
+    }
+
+    function curvedPath(from, to) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        const bend = Math.min(Math.abs(dx) * .48, 180) * Math.sign(dx);
+        return `M${from.x},${from.y} C${from.x + bend},${from.y} ${to.x - bend},${to.y} ${to.x},${to.y}`;
+      }
+      const bend = Math.min(Math.abs(dy) * .48, 180) * Math.sign(dy);
+      return `M${from.x},${from.y} C${from.x},${from.y + bend} ${to.x},${to.y - bend} ${to.x},${to.y}`;
+    }
+
+    function addArrowMarkers() {
+      const defs = svgElement('defs');
+      ['prior', 'next'].forEach(kind => {
+        const marker = svgElement('marker', { id: kind + '-arrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 8, markerHeight: 8, orient: 'auto-start-reverse', markerUnits: 'userSpaceOnUse' });
+        marker.appendChild(svgElement('path', { d: 'M2 1 L9 5 L2 9', fill: 'none', stroke: 'var(--' + kind + ')', 'stroke-width': 1.7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
+        defs.appendChild(marker);
+      });
+      connections.appendChild(defs);
+    }
+
+    function drawDependencyEdges() {
+      COURSES.forEach(course => course.prerequisites.forEach(code => {
+        const priorPath = (course.code === selectedCode || ancestors.has(course.code)) && ancestors.has(code);
+        const nextPath = (code === selectedCode || descendants.has(code)) && descendants.has(course.code);
+        if ((!priorPath && !nextPath) || !positions.has(code) || !positions.has(course.code)) return;
+        const source = positions.get(code);
+        const target = positions.get(course.code);
+        const kind = priorPath ? 'prior' : 'next';
+        const path = svgElement('path', {
+          class: 'dependency-edge ' + (priorPath ? 'is-prereq' : 'is-unlocked'),
+          'data-source': code, 'data-target': course.code,
+          d: curvedPath(anchor(source, target, CARD), anchor(target, source, CARD)),
+          'marker-end': 'url(#' + kind + '-arrow)'
+        });
+        connections.appendChild(path);
       }));
     }
 
-    const prerequisitesByCode = prerequisiteMap();
-
-    function renderPeriods() {
-      const fragment = document.createDocumentFragment();
-
-      for (let period = 1; period <= 10; period += 1) {
-        const courses = COURSES.filter(function(course) {
-          return course.period === period;
-        });
-        const periodHours = courses.reduce(function(total, course) {
-          return total + course.hours;
-        }, 0);
-
-        const column = document.createElement("section");
-        column.className = "period-column";
-        column.setAttribute("aria-labelledby", "period-" + period);
-
-        const heading = document.createElement("h2");
-        heading.className = "period-heading";
-        heading.id = "period-" + period;
-        heading.innerHTML =
-          '<span class="period-number">' + period + '</span>' +
-          '<span class="period-label"><strong>' + period + 'º período</strong>' +
-          '<small>' + courses.length + ' componentes · ' + periodHours.toLocaleString("pt-BR") + ' h</small></span>';
-
-        const list = document.createElement("div");
-        list.className = "course-list";
-
-        courses.forEach(function(course) {
-          const card = document.createElement("button");
-          card.type = "button";
-          card.className = "course-card";
-          card.dataset.code = course.code;
-          card.dataset.type = course.type;
-          card.setAttribute("aria-pressed", "false");
-          card.setAttribute(
-            "aria-label",
-            course.name + ", código " + course.code + ", " + course.hours + " horas, " + course.period + "º período"
-          );
-          card.innerHTML =
-            '<span class="course-code-row">' +
-              '<span class="course-code">' + course.code + '</span>' +
-              '<span class="course-hours">' + course.hours.toLocaleString("pt-BR") + ' h</span>' +
-            '</span>' +
-            '<span class="course-name">' + course.name + '</span>';
-
-          card.addEventListener("click", function() {
-            if (selectedCode === course.code) {
-              clearSelection();
-            } else {
-              selectCourse(course.code);
-            }
-          });
-
-          list.appendChild(card);
-        });
-
-        column.appendChild(heading);
-        column.appendChild(list);
-        fragment.appendChild(column);
-      }
-
-      periodGrid.appendChild(fragment);
-    }
-
-    function drawConnections() {
-      connections.replaceChildren();
-
-      if (window.matchMedia("(max-width: 900px)").matches) {
-        return;
-      }
-
-      const stageRect = mapStage.getBoundingClientRect();
-      const width = mapStage.scrollWidth;
-      const height = mapStage.scrollHeight;
-      connections.setAttribute("viewBox", "0 0 " + width + " " + height);
-      connections.setAttribute("width", String(width));
-      connections.setAttribute("height", String(height));
-
-      COURSES.forEach(function(course) {
-        const target = periodGrid.querySelector('[data-code="' + course.code + '"]');
-        if (!target) {
-          return;
-        }
-        const targetRect = target.getBoundingClientRect();
-
-        course.prerequisites.forEach(function(prerequisiteCode) {
-          const source = periodGrid.querySelector('[data-code="' + prerequisiteCode + '"]');
-          if (!source) {
-            return;
-          }
-
-          const sourceRect = source.getBoundingClientRect();
-          const startX = sourceRect.right - stageRect.left;
-          const startY = sourceRect.top - stageRect.top + sourceRect.height / 2;
-          const endX = targetRect.left - stageRect.left;
-          const endY = targetRect.top - stageRect.top + targetRect.height / 2;
-          const distance = Math.max(28, (endX - startX) * 0.48);
-
-          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          path.setAttribute("class", "edge");
-          path.setAttribute("data-source", prerequisiteCode);
-          path.setAttribute("data-target", course.code);
-          path.setAttribute(
-            "d",
-            "M " + startX + " " + startY +
-            " C " + (startX + distance) + " " + startY +
-            ", " + (endX - distance) + " " + endY +
-            ", " + endX + " " + endY
-          );
-          connections.appendChild(path);
-        });
-      });
-
-      updateHighlights();
-    }
-
-    function selectCourse(code) {
+    function selectCourse(code, keyboard = false) {
+      if (selectedCode === code) { clearSelection(); return; }
       selectedCode = code;
-      const course = courseByCode.get(code);
-      const ancestors = collectRelations(code, prerequisitesByCode);
-      const descendants = collectRelations(code, dependents);
+      activePeriod = courseByCode.get(code).period;
+      ancestors = collectRelations(code, prerequisitesByCode);
+      descendants = collectRelations(code, dependents);
+      viewMode = 'chain';
+      updateInspector();
+      renderScene();
+      if (keyboard) {
+        const card = nodesLayer.querySelector('[data-code="' + code + '"]');
+        if (card) card.focus({ preventScroll: true });
+      }
+    }
 
-      selectionCode.textContent = course.code + " · " + course.period + "º período";
-      selectionTitle.textContent = course.name;
-      selectionMeta.textContent = pluralize(course.hours, "hora", "horas");
-      priorCount.textContent = String(ancestors.size);
-      nextCount.textContent = String(descendants.size);
-      selectionPanel.hidden = false;
-      document.body.classList.add("has-selection");
-
-      updateHighlights(ancestors, descendants);
-      window.requestAnimationFrame(drawConnections);
+    function resetSelection() {
+      selectedCode = null;
+      ancestors.clear();
+      descendants.clear();
+      $('selectionPanel').hidden = true;
+      $('clearButton').hidden = true;
+      $('relationDetails').open = false;
     }
 
     function clearSelection() {
-      selectedCode = null;
-      selectionPanel.hidden = true;
-      document.body.classList.remove("has-selection");
-      updateHighlights();
-      window.requestAnimationFrame(drawConnections);
+      resetSelection();
+      viewMode = 'period';
+      renderScene();
     }
 
-    function updateHighlights(ancestorSet, descendantSet) {
-      const ancestors = ancestorSet || (selectedCode ? collectRelations(selectedCode, prerequisitesByCode) : new Set());
-      const descendants = descendantSet || (selectedCode ? collectRelations(selectedCode, dependents) : new Set());
+    function showPeriod(period) {
+      activePeriod = period;
+      resetSelection();
+      viewMode = 'period';
+      renderScene();
+    }
 
-      periodGrid.querySelectorAll(".course-card").forEach(function(card) {
-        const code = card.dataset.code;
-        card.classList.remove("is-selected", "is-prereq", "is-unlocked", "is-dimmed");
-        card.setAttribute("aria-pressed", code === selectedCode ? "true" : "false");
+    function updateInspector() {
+      const course = courseByCode.get(selectedCode);
+      $('selectionPanel').hidden = false;
+      $('clearButton').hidden = false;
+      $('selectionCode').textContent = 'Disciplina selecionada · ' + course.code;
+      $('selectionTitle').textContent = course.name;
+      $('selectionMeta').textContent = course.period + 'º período · ' + course.hours + ' horas';
+      $('priorCount').textContent = ancestors.size;
+      $('nextCount').textContent = descendants.size;
+      renderRelationChips($('directPrior'), course.prerequisites, 'Nenhum pré-requisito direto.');
+      renderRelationChips($('directNext'), dependents.get(selectedCode), 'Nenhuma dependência direta.');
+    }
 
-        if (!selectedCode) {
-          return;
-        }
-
-        if (code === selectedCode) {
-          card.classList.add("is-selected");
-        } else if (ancestors.has(code)) {
-          card.classList.add("is-prereq");
-        } else if (descendants.has(code)) {
-          card.classList.add("is-unlocked");
-        } else {
-          card.classList.add("is-dimmed");
-        }
-      });
-
-      connections.querySelectorAll(".edge").forEach(function(edge) {
-        const source = edge.dataset.source;
-        const target = edge.dataset.target;
-        edge.classList.remove("is-prereq", "is-unlocked", "is-dimmed");
-
-        if (!selectedCode) {
-          return;
-        }
-
-        const isPriorPath =
-          (target === selectedCode || ancestors.has(target)) &&
-          ancestors.has(source);
-        const isNextPath =
-          (source === selectedCode || descendants.has(source)) &&
-          descendants.has(target);
-
-        if (isPriorPath) {
-          edge.classList.add("is-prereq");
-        } else if (isNextPath) {
-          edge.classList.add("is-unlocked");
-        } else {
-          edge.classList.add("is-dimmed");
-        }
+    function renderRelationChips(container, codes, emptyText) {
+      container.replaceChildren();
+      if (!codes.length) {
+        const empty = document.createElement('span');
+        empty.className = 'empty-relation';
+        empty.textContent = emptyText;
+        container.appendChild(empty);
+        return;
+      }
+      codes.forEach(code => {
+        const course = courseByCode.get(code);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'relation-chip';
+        button.dataset.code = code;
+        button.textContent = course.period + 'º · ' + course.name;
+        button.addEventListener('click', event => selectCourse(code, event.detail === 0));
+        container.appendChild(button);
       });
     }
 
-    clearButton.addEventListener("click", clearSelection);
+    function updateNavigation() {
+      $('periodNavigation').querySelectorAll('button').forEach(button => {
+        const period = Number(button.dataset.period);
+        button.classList.toggle('is-active', viewMode === 'period' && period === activePeriod);
+        button.classList.toggle('is-related', viewMode === 'chain' && groups.some(group => group.period === period));
+        button.setAttribute('aria-pressed', String(viewMode === 'period' && period === activePeriod));
+      });
+      $('overviewButton').classList.toggle('is-active', viewMode === 'all');
+      $('overviewButton').setAttribute('aria-pressed', String(viewMode === 'all'));
+    }
 
-    window.addEventListener("resize", function() {
-      window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(drawConnections, 120);
+    function updateStatus() {
+      if (viewMode === 'chain') {
+        const total = 1 + ancestors.size + descendants.size;
+        $('mapStatus').innerHTML = '<strong>Cadeia de ' + selectedCode + '</strong> · ' + total + (total === 1 ? ' componente' : ' componentes') + ' · ' + groups.length + (groups.length === 1 ? ' período' : ' períodos');
+      } else if (viewMode === 'all') {
+        $('mapStatus').innerHTML = '<strong>Visão geral</strong> · 10 períodos · 62 componentes';
+      } else {
+        $('mapStatus').innerHTML = '<strong>' + activePeriod + 'º período</strong> · ' + currentCourses().length + ' componentes';
+      }
+    }
+
+    function applyCamera(animate = false) {
+      window.clearTimeout(animationTimer);
+      viewport.classList.toggle('is-animating', animate);
+      if (animate) animationTimer = window.setTimeout(() => viewport.classList.remove('is-animating'), 250);
+      stage.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`;
+      $('zoomLevel').textContent = Math.round(camera.scale * 100) + '%';
+      $('zoomOut').disabled = camera.scale <= MIN_ZOOM + .0001;
+      $('zoomIn').disabled = camera.scale >= MAX_ZOOM - .0001;
+    }
+
+    function fitBounds(bounds, animate = true, maximum = 1.12) {
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      const paddingX = width < 700 ? 16 : 44;
+      const paddingY = width < 700 ? 52 : 64;
+      camera.scale = Math.max(MIN_ZOOM, Math.min((width - paddingX * 2) / bounds.width, (height - paddingY * 2) / bounds.height, maximum));
+      camera.x = width / 2 - (bounds.x + bounds.width / 2) * camera.scale;
+      camera.y = height / 2 - (bounds.y + bounds.height / 2) * camera.scale;
+      applyCamera(animate);
+    }
+
+    function fitScene(animate = true) {
+      if (compactLayout && viewMode === 'period' && groups.length === 1) {
+        // On a phone, fit the map's width and center its period hub. Tall
+        // periods remain readable and can be explored with vertical panning.
+        camera.scale = Math.min(1.1, Math.max(MIN_ZOOM, (viewport.clientWidth - 16) / sceneBounds.width));
+        camera.x = viewport.clientWidth / 2 - groups[0].center.x * camera.scale;
+        camera.y = viewport.clientHeight / 2 - groups[0].center.y * camera.scale;
+        applyCamera(animate);
+      } else fitBounds(sceneBounds, animate);
+    }
+
+    function zoomAt(scale, x = viewport.clientWidth / 2, y = viewport.clientHeight / 2, animate = false) {
+      const nextScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, scale));
+      const worldX = (x - camera.x) / camera.scale;
+      const worldY = (y - camera.y) / camera.scale;
+      camera.x = x - worldX * nextScale;
+      camera.y = y - worldY * nextScale;
+      camera.scale = nextScale;
+      applyCamera(animate);
+    }
+
+    function focusCourse(code) {
+      const position = positions.get(code);
+      if (!position) return;
+      fitBounds({ x: position.x - 240, y: position.y - 180, width: 480, height: 360 }, true, 1.5);
+    }
+
+    for (let period = 1; period <= 10; period++) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'period-button';
+      button.dataset.period = period;
+      button.textContent = period + 'º';
+      button.setAttribute('aria-label', 'Mostrar ' + period + 'º período');
+      button.setAttribute('aria-pressed', 'false');
+      button.addEventListener('click', () => showPeriod(period));
+      $('periodNavigation').appendChild(button);
+    }
+    $('overviewButton').addEventListener('click', () => { resetSelection(); viewMode = 'all'; renderScene(); });
+    $('clearButton').addEventListener('click', clearSelection);
+    $('zoomIn').addEventListener('click', () => zoomAt(camera.scale * 1.25, undefined, undefined, true));
+    $('zoomOut').addEventListener('click', () => zoomAt(camera.scale / 1.25, undefined, undefined, true));
+    $('zoomReset').addEventListener('click', () => zoomAt(1, undefined, undefined, true));
+    $('fitButton').addEventListener('click', () => fitScene());
+    $('focusCourseButton').addEventListener('click', () => focusCourse(selectedCode));
+    $('fitChainButton').addEventListener('click', () => fitScene());
+
+    nodesLayer.addEventListener('click', event => {
+      const card = event.target.closest('.course-card');
+      if (card) selectCourse(card.dataset.code, event.detail === 0);
+    });
+    viewport.addEventListener('click', event => {
+      if (performance.now() < suppressClickUntil) { event.preventDefault(); event.stopImmediatePropagation(); }
+    }, true);
+    viewport.addEventListener('wheel', event => {
+      if (event.target.closest('.map-controls')) return;
+      event.preventDefault();
+      const rect = viewport.getBoundingClientRect();
+      const delta = (event.deltaY || event.deltaX) * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? viewport.clientHeight : 1);
+      zoomAt(camera.scale * Math.exp(-Math.max(-150, Math.min(150, delta)) * .004), event.clientX - rect.left, event.clientY - rect.top);
+    }, { passive: false });
+    viewport.addEventListener('dblclick', event => {
+      if (event.target.closest('button, .period-hub')) return;
+      event.preventDefault();
+      const rect = viewport.getBoundingClientRect();
+      zoomAt(camera.scale * 1.3, event.clientX - rect.left, event.clientY - rect.top, true);
     });
 
-    window.addEventListener("load", drawConnections);
+    // Pointer events cover mouse dragging, one-finger panning and two-finger zoom.
+    const pointers = new Map();
+    let panOrigin = null;
+    let gestureMoved = false;
+    function localPoint(event) {
+      const rect = viewport.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    }
+    function pairMetrics(points) {
+      const [a, b] = points;
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, distance: Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)) };
+    }
+    viewport.addEventListener('pointerdown', event => {
+      if (event.target.closest('.map-controls') || (event.pointerType === 'mouse' && event.button !== 0)) return;
+      pointers.set(event.pointerId, localPoint(event));
+      if (pointers.size === 1) { panOrigin = localPoint(event); gestureMoved = false; }
+      if (pointers.size > 1) { gestureMoved = true; suppressClickUntil = performance.now() + 400; }
+    });
+    window.addEventListener('pointermove', event => {
+      if (!pointers.has(event.pointerId)) return;
+      const previous = pointers.get(event.pointerId);
+      const oldPoints = [...pointers.values()];
+      const current = localPoint(event);
+      pointers.set(event.pointerId, current);
+      if (pointers.size > 1) {
+        const before = pairMetrics(oldPoints);
+        const after = pairMetrics([...pointers.values()]);
+        const worldX = (before.x - camera.x) / camera.scale;
+        const worldY = (before.y - camera.y) / camera.scale;
+        camera.scale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camera.scale * after.distance / before.distance));
+        camera.x = after.x - worldX * camera.scale;
+        camera.y = after.y - worldY * camera.scale;
+        gestureMoved = true;
+      } else {
+        if (!gestureMoved && Math.hypot(current.x - panOrigin.x, current.y - panOrigin.y) < 5) return;
+        camera.x += current.x - previous.x;
+        camera.y += current.y - previous.y;
+        gestureMoved = true;
+      }
+      if (event.cancelable) event.preventDefault();
+      suppressClickUntil = performance.now() + 400;
+      viewport.classList.add('is-dragging');
+      try { viewport.setPointerCapture(event.pointerId); } catch (_) {}
+      applyCamera();
+    }, { passive: false });
+    function endPointer(event) {
+      if (!pointers.has(event.pointerId)) return;
+      pointers.delete(event.pointerId);
+      if (gestureMoved) suppressClickUntil = performance.now() + 300;
+      if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+      if (!pointers.size) { viewport.classList.remove('is-dragging'); panOrigin = null; }
+      else { panOrigin = [...pointers.values()][0]; }
+    }
+    window.addEventListener('pointerup', endPointer);
+    window.addEventListener('pointercancel', endPointer);
+    window.addEventListener('blur', () => { pointers.clear(); panOrigin = null; viewport.classList.remove('is-dragging'); });
 
-    renderPeriods();
-    window.requestAnimationFrame(drawConnections);
+    viewport.addEventListener('keydown', event => {
+      if (event.target.closest('.map-controls')) return;
+      if (event.key === '+' || event.key === '=') zoomAt(camera.scale * 1.25, undefined, undefined, true);
+      else if (event.key === '-') zoomAt(camera.scale / 1.25, undefined, undefined, true);
+      else if (event.key === '0') fitScene();
+      else if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        camera.x += event.key === 'ArrowLeft' ? 70 : event.key === 'ArrowRight' ? -70 : 0;
+        camera.y += event.key === 'ArrowUp' ? 70 : event.key === 'ArrowDown' ? -70 : 0;
+        applyCamera(true);
+      } else return;
+      event.preventDefault();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && selectedCode) { clearSelection(); viewport.focus({ preventScroll: true }); }
+    });
+    nodesLayer.addEventListener('focusin', event => {
+      const card = event.target.closest('.course-card');
+      if (!card) return;
+      viewport.scrollLeft = 0;
+      viewport.scrollTop = 0;
+      const cardRect = card.getBoundingClientRect();
+      const viewRect = viewport.getBoundingClientRect();
+      if (cardRect.left < viewRect.left + 12 || cardRect.right > viewRect.right - 12 || cardRect.top < viewRect.top + 48 || cardRect.bottom > viewRect.bottom - 72) focusCourse(card.dataset.code);
+    });
+
+    let previousWidth = viewport.clientWidth;
+    let previousHeight = viewport.clientHeight;
+    let resizeFrame;
+    const resizeObserver = new ResizeObserver(() => {
+      window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(() => {
+        const width = viewport.clientWidth;
+        const height = viewport.clientHeight;
+        const nextCompact = window.matchMedia('(max-width: 700px)').matches;
+        if (nextCompact !== compactLayout || Math.abs(width - previousWidth) > 20) renderScene();
+        else if (Math.abs(height - previousHeight) > 120) fitScene(false);
+        else {
+          camera.x += (width - previousWidth) / 2;
+          camera.y += (height - previousHeight) / 2;
+          applyCamera();
+        }
+        previousWidth = width;
+        previousHeight = height;
+      });
+    });
+    resizeObserver.observe(viewport);
+
+    function updateThemeControl() {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      $('themeToggle').setAttribute('aria-pressed', String(dark));
+      $('themeToggle').setAttribute('aria-label', dark ? 'Ativar modo claro' : 'Ativar modo escuro');
+      $('themeToggle').title = dark ? 'Ativar modo claro' : 'Ativar modo escuro';
+      $('themeLabel').textContent = dark ? 'Modo claro' : 'Modo escuro';
+      document.querySelector('meta[name="theme-color"]').content = dark ? '#171a15' : '#FFD32C';
+    }
+    $('themeToggle').addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      try { localStorage.setItem('civil-636-theme', next); } catch (_) {}
+      updateThemeControl();
+    });
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+      let saved;
+      try { saved = localStorage.getItem('civil-636-theme'); } catch (_) {}
+      if (saved !== 'dark' && saved !== 'light') {
+        document.documentElement.dataset.theme = event.matches ? 'dark' : 'light';
+        updateThemeControl();
+      }
+    });
+
+    updateThemeControl();
+    renderScene();
   </script>
 </body>
 </html>
