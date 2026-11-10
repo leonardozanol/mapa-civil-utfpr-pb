@@ -16,7 +16,8 @@ Mapa interativo das disciplinas obrigatórias de Engenharia Civil da UTFPR, Camp
 - Mapa mental com o período no centro e as disciplinas conectadas ao redor.
 - Navegação individual pelos dez períodos e opção **Todos os períodos**.
 - Seleção de uma disciplina para visualizar seus pré-requisitos e os componentes que dependem dela, direta ou indiretamente.
-- Conexões entre disciplinas de diferentes períodos, com setas indicando a direção da dependência.
+- Cadeia em ordem de períodos, com linhas de cantos arredondados contornando os cartões e setas indicando a direção da dependência.
+- Destaque das ligações de uma disciplina ao passar o mouse ou dar foco pelo teclado, além de filtro para mostrar apenas suas ligações diretas.
 - Painel com código, nome, período, carga horária e quantidade de componentes nas cadeias anterior e posterior.
 - Consulta das conexões diretas e navegação entre elas.
 - Zoom por botões, roda do mouse e gesto de pinça, além de movimentação por arraste.
@@ -45,6 +46,13 @@ Mapa interativo das disciplinas obrigatórias de Engenharia Civil da UTFPR, Camp
 
 O mapa funciona localmente, sem internet. O acesso ao PDF da matriz oficial pelo link do rodapé depende de conexão.
 
+### Arquivos para distribuição
+
+| Arquivo | Finalidade |
+| --- | --- |
+| `index.html` | Aplicação completa, incluindo estilos, scripts e dados curriculares |
+| `readme.md` | Documentação do projeto |
+
 ## Como usar
 
 1. Escolha um período pelos botões de **1º** a **10º**. A visualização inicial apresenta o primeiro período.
@@ -53,7 +61,11 @@ O mapa funciona localmente, sem internet. O acesso ao PDF da matriz oficial pelo
 4. Consulte o painel abaixo do mapa para ver os detalhes e as quantidades de componentes relacionados.
 5. Expanda **Ver conexões diretas** para consultar os pré-requisitos imediatos e as dependências imediatas. Clique em um desses componentes para explorar sua cadeia.
 
-Na visualização de uma cadeia, aparecem apenas as disciplinas relacionadas à seleção. O centro de cada período mantém o total de componentes e de horas daquele período; a etiqueta **n nesta cadeia** informa quantos componentes estão sendo exibidos naquele grupo.
+Na visualização de uma cadeia, aparecem apenas as disciplinas relacionadas à seleção. Os períodos seguem da esquerda para a direita no notebook e de cima para baixo no celular. O cabeçalho de cada período mantém o total de componentes e de horas daquele período; a etiqueta **n nesta cadeia** informa quantos componentes estão sendo exibidos naquele grupo.
+
+A cadeia abre com uma aproximação que permite ler os cartões próximos à seleção. Arraste o mapa para acompanhar os demais períodos ou use **Ver cadeia completa** para obter uma visão geral. **Aproximar leitura** retorna à aproximação inicial.
+
+Passe o mouse sobre uma disciplina ou navegue até ela com `Tab` para realçar suas ligações diretas e suavizar as demais. O botão **Só ligações diretas** oculta as outras linhas; os componentes continuam disponíveis para consulta. Desative o filtro para restaurar todas as linhas da cadeia.
 
 Escolher outro período ou **Todos os períodos** limpa a seleção. Clicar novamente na disciplina selecionada também retorna à visualização do período dela.
 
@@ -81,6 +93,8 @@ As setas partem do pré-requisito e apontam para a disciplina que o exige. Um co
 | Duplo clique em uma área livre | Aproxima a região clicada |
 | **Focar disciplina** | Aproxima a disciplina selecionada |
 | **Ver cadeia completa** | Enquadra a cadeia da seleção atual |
+| **Aproximar leitura** | Retorna à visualização ampliada próxima à disciplina selecionada |
+| **Só ligações diretas** | Alterna entre todas as linhas e somente as ligações diretas da disciplina em destaque |
 | **Limpar seleção** | Retorna ao período da disciplina selecionada |
 
 O zoom varia de **12% a 250%**. Em celulares, os grupos usam uma organização mais estreita; períodos com muitas disciplinas podem ser explorados movendo o mapa na vertical.
@@ -97,6 +111,10 @@ Com o foco no mapa:
 | Setas direcionais | Mover o mapa |
 
 Use `Tab` para navegar pelos controles e disciplinas, e `Enter` ou espaço para ativar um botão. A tecla `Esc` limpa a seleção atual.
+
+## Modo escuro
+
+O botão no cabeçalho alterna entre os modos claro e escuro. Na primeira abertura, o projeto acompanha a preferência de tema do sistema. Depois de uma escolha manual, ela é salva em `localStorage` com a chave `civil-636-theme`.
 
 ## Referência curricular
 

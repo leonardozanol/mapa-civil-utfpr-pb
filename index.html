@@ -200,6 +200,30 @@
     .dependency-edge { fill: none; stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
     .dependency-edge.is-prereq { stroke: var(--prior); }
     .dependency-edge.is-unlocked { stroke: var(--next); }
+    .chain-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 12px 18px; border-bottom: 1px solid var(--line); background: var(--soft); }
+    .chain-toolbar-copy { flex: 1 1 220px; min-width: 0; }
+    .chain-toolbar-title { display: block; font-size: .75rem; font-weight: 750; }
+    .chain-toolbar-hint { display: block; margin-top: 3px; color: var(--muted); font-size: .67rem; }
+    .chain-toolbar-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chain-toolbar .plain-button { font-size: .71rem; min-height: 40px; padding: 8px 11px; }
+    .chain-toolbar .plain-button[aria-pressed="true"] { background: var(--yellow); color: #25271f; border-color: var(--yellow); }
+    .chain-lane { fill: var(--surface); fill-opacity: .32; stroke: var(--line); stroke-width: 1; }
+    .edge-bundle { opacity: .55; }
+    .edge-bundle.is-emphasized { opacity: 1; }
+    .edge-bundle.is-muted { opacity: .09; }
+    .edge-bundle.is-hidden { visibility: hidden; }
+    .edge-halo { fill: none; stroke: var(--canvas); stroke-width: 7; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+    .edge-bundle.is-emphasized .dependency-edge { stroke-width: 2.8; }
+    .map-stage.is-chain .course-card { width: 244px; height: 120px; padding: 15px 16px; }
+    .map-stage.is-chain .course-card.is-selected { padding: 14px 15px; }
+    .map-stage.is-chain .course-card.is-prereq, .map-stage.is-chain .course-card.is-unlocked { padding-left: 13px; }
+    .map-stage.is-chain .course-name { font-size: 16px; line-height: 1.35; }
+    .map-stage.is-chain .course-code, .map-stage.is-chain .course-hours { font-size: 11px; }
+    .map-stage.is-chain .period-hub { width: 244px; height: 88px; border-radius: 12px; }
+    .map-stage.is-chain .hub-kicker { display: none; }
+    .map-stage.is-chain .hub-chain-count { bottom: -11px; }
+    .map-stage.is-chain .course-card.is-trace-muted { opacity: .3; }
+    .map-stage.is-chain .course-card.is-trace-neighbor { box-shadow: 0 0 0 3px var(--line); }
     .period-hub {
       position: absolute;
       display: flex;
@@ -355,6 +379,16 @@
       .toolbar-actions { width: 100%; }
       .toolbar-actions .plain-button { flex: 1; font-size: .72rem; padding: 8px 10px; }
       .map-viewport { height: clamp(560px, 75svh, 720px); min-height: 440px; border-radius: 0 0 14px 14px; }
+      .chain-toolbar { padding: 11px; gap: 10px; }
+      .chain-toolbar-copy { flex-basis: 100%; }
+      .chain-toolbar-actions { width: 100%; }
+      .chain-toolbar-actions .plain-button { flex: 1; font-size: .66rem; padding-inline: 7px; min-height: 44px; }
+      .map-stage.is-chain .course-card { width: 218px; height: 124px; padding: 13px 14px; }
+      .map-stage.is-chain .course-card.is-selected { padding: 12px 13px; }
+      .map-stage.is-chain .course-card.is-prereq, .map-stage.is-chain .course-card.is-unlocked { padding-left: 11px; }
+      .map-stage.is-chain .course-name { font-size: 14px; }
+      .map-stage.is-chain .course-code, .map-stage.is-chain .course-hours { font-size: 10px; }
+      .map-stage.is-chain .period-hub { width: 218px; height: 80px; }
       .period-hub { width: 160px; height: 100px; border-radius: 14px; }
       .period-hub strong { font-size: 21px; }
       .hub-meta { font-size: 10px; }
@@ -394,7 +428,7 @@
       *, *::before, *::after { transition: none !important; }
     }
     @media print {
-      .theme-button, .toolbar-actions, .map-controls, .map-hint, .selection-actions, .relation-details { display: none !important; }
+      .theme-button, .toolbar-actions, .chain-toolbar, .map-controls, .map-hint, .selection-actions, .relation-details { display: none !important; }
       .wrap { width: 100%; }
       .page-header, body { color: #000; background: #fff; }
       .map-viewport { height: 650px; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
@@ -452,7 +486,18 @@
           <button type="button" class="plain-button" id="clearButton" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>Limpar seleção</button>
         </div>
       </div>
-      <div class="map-viewport" id="mapViewport" tabindex="0" role="region" aria-label="Mapa mental de disciplinas" aria-describedby="mapHelp">
+      <div class="chain-toolbar" id="chainToolbar" hidden>
+        <div class="chain-toolbar-copy">
+          <span class="chain-toolbar-title" id="chainDirection">Períodos em sequência →</span>
+          <span class="chain-toolbar-hint" id="chainHint">Passe o mouse ou dê foco em uma disciplina para seguir suas ligações.</span>
+        </div>
+        <div class="chain-toolbar-actions">
+          <button type="button" class="plain-button" id="directLinesButton" aria-pressed="false">Só ligações diretas</button>
+          <button type="button" class="plain-button" id="readingViewButton">Aproximar leitura</button>
+          <button type="button" class="plain-button" id="chainOverviewButton">Ver cadeia completa</button>
+        </div>
+      </div>
+      <div class="map-viewport" id="mapViewport" tabindex="0" role="region" aria-label="Mapa interativo de disciplinas" aria-describedby="mapHelp">
         <div class="map-stage" id="mapStage">
           <svg class="connections" id="connections" aria-hidden="true"></svg>
           <div class="nodes-layer" id="nodesLayer"></div>
@@ -614,6 +659,10 @@
     let animationTimer;
     let suppressClickUntil = 0;
     let compactLayout = window.matchMedia('(max-width: 700px)').matches;
+    let directLinesOnly = false;
+    let hoveredCode = null;
+    let focusedCode = null;
+    let chainEdges = [];
 
     function collectRelations(startCode, relationMap) {
       const result = new Set();
@@ -693,6 +742,11 @@
 
     function renderScene() {
       compactLayout = window.matchMedia('(max-width: 700px)').matches;
+      stage.classList.toggle('is-chain', viewMode === 'chain');
+      $('chainToolbar').hidden = viewMode !== 'chain';
+      hoveredCode = null;
+      focusedCode = null;
+      if (viewMode === 'chain') { renderChainScene(); return; }
       CARD.width = compactLayout ? 148 : 218;
       CARD.height = compactLayout ? 116 : 114;
       HUB.width = compactLayout ? 160 : 184;
@@ -768,11 +822,231 @@
           fragment.appendChild(makeCard(point.course, position));
         });
       });
-      if (viewMode === 'chain') drawDependencyEdges();
       nodesLayer.appendChild(fragment);
       updateNavigation();
       updateStatus();
       fitScene(false);
+    }
+
+    function visibleChainEdges() {
+      const edges = [];
+      COURSES.forEach(course => course.prerequisites.forEach(code => {
+        const priorPath = (course.code === selectedCode || ancestors.has(course.code)) && ancestors.has(code);
+        const nextPath = (code === selectedCode || descendants.has(code)) && descendants.has(course.code);
+        if (priorPath || nextPath) edges.push({ source: code, target: course.code, kind: priorPath ? 'prior' : 'next' });
+      }));
+      return edges;
+    }
+
+    function orderedChainLayers(courses, edges) {
+      const periods = [...new Set(courses.map(course => course.period))].sort((a, b) => a - b);
+      const layers = periods.map(period => ({ period, courses: courses.filter(course => course.period === period) }));
+      const originalOrder = new Map(courses.map((course, index) => [course.code, index]));
+      // Repeated forward/backward barycenter sweeps align related branches.
+      // Period order is fixed, so all dependencies keep their time direction.
+      for (let pass = 0; pass < 8; pass++) {
+        const forward = pass % 2 === 0;
+        const rank = new Map();
+        layers.forEach((layer, col) => layer.courses.forEach((course, row) => rank.set(course.code, { col, value: (row + .5) / layer.courses.length })));
+        const sweep = forward ? layers : [...layers].reverse();
+        sweep.forEach(layer => {
+          function score(course) {
+            const neighbors = edges.filter(edge => forward ? edge.target === course.code : edge.source === course.code)
+              .map(edge => rank.get(forward ? edge.source : edge.target)).filter(Boolean);
+            return neighbors.length ? neighbors.reduce((sum, item) => sum + item.value, 0) / neighbors.length : rank.get(course.code).value;
+          }
+          layer.courses.sort((a, b) => score(a) - score(b) || originalOrder.get(a.code) - originalOrder.get(b.code));
+          layer.courses.forEach((course, row) => { rank.get(course.code).value = (row + .5) / layer.courses.length; });
+        });
+      }
+      return layers;
+    }
+
+    function renderChainScene() {
+      CARD.width = compactLayout ? 218 : 244;
+      CARD.height = compactLayout ? 124 : 120;
+      HUB.width = CARD.width;
+      HUB.height = compactLayout ? 80 : 88;
+      positions.clear();
+      groups.length = 0;
+      connections.replaceChildren();
+      nodesLayer.replaceChildren();
+      chainEdges = visibleChainEdges();
+      const layers = orderedChainLayers(currentCourses(), chainEdges);
+      const layerByCode = new Map();
+      layers.forEach((layer, col) => layer.courses.forEach(course => layerByCode.set(course.code, col)));
+      chainEdges.forEach(edge => { edge.fromCol = layerByCode.get(edge.source); edge.toCol = layerByCode.get(edge.target); });
+      const skippedSources = [...new Set(chainEdges.filter(edge => edge.toCol - edge.fromCol > 1).map(edge => edge.source))];
+      const railCount = Math.ceil(skippedSources.length / 2);
+      const topRailSpace = compactLayout ? 0 : railCount * 18 + 28;
+      const bottomRailSpace = compactLayout ? 0 : railCount * 18 + 28;
+      const rowStep = CARD.height + 48;
+      const columnGap = 132;
+      const margin = compactLayout ? 84 : 38;
+      const headingTop = compactLayout ? 32 : 44 + topRailSpace;
+      const maxRows = Math.max(...layers.map(layer => layer.courses.length));
+      const maxBodyHeight = maxRows * rowStep - 48;
+      const bodyTop = headingTop + HUB.height + 40;
+      let mobileY = 32;
+      const fragment = document.createDocumentFragment();
+
+      layers.forEach((layer, col) => {
+        const x = compactLayout ? margin + CARD.width / 2 : margin + col * (CARD.width + columnGap) + CARD.width / 2;
+        const y = compactLayout ? mobileY : headingTop;
+        const bodyHeight = layer.courses.length * rowStep - 48;
+        const firstY = compactLayout ? y + HUB.height + 38 : bodyTop + (maxBodyHeight - bodyHeight) / 2;
+        const height = compactLayout ? HUB.height + 38 + bodyHeight + 24 : HUB.height + 40 + maxBodyHeight + 24;
+        groups.push({ period: layer.period, x: x - CARD.width / 2 - 14, y: y - 14, width: CARD.width + 28, height: height + 28, center: { x, y: y + HUB.height / 2 } });
+        connections.appendChild(svgElement('rect', { class: 'chain-lane', x: x - CARD.width / 2 - 14, y: y - 14, width: CARD.width + 28, height: height + 28, rx: 20 }));
+        const allCourses = COURSES.filter(course => course.period === layer.period);
+        const hours = allCourses.reduce((sum, course) => sum + course.hours, 0);
+        const heading = document.createElement('div');
+        heading.className = 'period-hub';
+        heading.dataset.period = layer.period;
+        heading.setAttribute('role', 'heading');
+        heading.setAttribute('aria-level', '3');
+        heading.style.left = x - HUB.width / 2 + 'px';
+        heading.style.top = y + 'px';
+        heading.innerHTML = '<strong>' + layer.period + 'º período</strong><span class="hub-meta">' + allCourses.length + ' componentes · ' + hours.toLocaleString('pt-BR') + ' h</span><span class="hub-chain-count">' + layer.courses.length + ' nesta cadeia</span>';
+        fragment.appendChild(heading);
+        layer.courses.forEach((course, row) => {
+          const position = { x, y: firstY + row * rowStep + CARD.height / 2, width: CARD.width, height: CARD.height, col, row };
+          positions.set(course.code, position);
+          fragment.appendChild(makeCard(course, position));
+        });
+        mobileY = y + height + 76;
+      });
+
+      const worldWidth = compactLayout ? CARD.width + margin * 2 : margin * 2 + layers.length * CARD.width + (layers.length - 1) * columnGap;
+      const worldHeight = compactLayout ? mobileY : bodyTop + maxBodyHeight + 48 + bottomRailSpace;
+      sceneBounds = { x: 0, y: 0, width: worldWidth, height: worldHeight };
+      stage.style.width = worldWidth + 'px';
+      stage.style.height = worldHeight + 'px';
+      connections.setAttribute('viewBox', `0 0 ${worldWidth} ${worldHeight}`);
+      connections.setAttribute('width', worldWidth);
+      connections.setAttribute('height', worldHeight);
+      addArrowMarkers();
+      routeChainEdges({ skippedSources, bodyTop, maxBodyHeight, headingTop });
+      nodesLayer.appendChild(fragment);
+      updateNavigation();
+      updateStatus();
+      updateLinkEmphasis();
+      $('chainDirection').textContent = compactLayout ? 'Períodos em sequência ↓' : 'Períodos em sequência →';
+      readingView(false);
+    }
+
+    function roundedRoute(points, radius = 12) {
+      let path = `M${points[0].x},${points[0].y}`;
+      for (let i = 1; i < points.length - 1; i++) {
+        const previous = points[i - 1], current = points[i], next = points[i + 1];
+        const inLength = Math.hypot(current.x - previous.x, current.y - previous.y);
+        const outLength = Math.hypot(next.x - current.x, next.y - current.y);
+        if (inLength < .01 || outLength < .01) continue;
+        const r = Math.min(radius, inLength / 2, outLength / 2);
+        const before = { x: current.x + (previous.x - current.x) * r / inLength, y: current.y + (previous.y - current.y) * r / inLength };
+        const after = { x: current.x + (next.x - current.x) * r / outLength, y: current.y + (next.y - current.y) * r / outLength };
+        path += ` L${before.x},${before.y} Q${current.x},${current.y} ${after.x},${after.y}`;
+      }
+      const last = points[points.length - 1];
+      return path + ` L${last.x},${last.y}`;
+    }
+
+    function routeChainEdges(layout) {
+      const outgoing = new Map(), incoming = new Map();
+      positions.forEach((_, code) => { outgoing.set(code, []); incoming.set(code, []); });
+      chainEdges.forEach(edge => { outgoing.get(edge.source).push(edge); incoming.get(edge.target).push(edge); });
+      outgoing.forEach(edges => edges.sort((a, b) => positions.get(a.target).y - positions.get(b.target).y || a.toCol - b.toCol));
+      incoming.forEach(edges => edges.sort((a, b) => positions.get(a.source).y - positions.get(b.source).y || a.fromCol - b.fromCol));
+      const adjacent = new Map();
+      chainEdges.filter(edge => edge.toCol - edge.fromCol === 1).forEach(edge => {
+        if (!adjacent.has(edge.fromCol)) adjacent.set(edge.fromCol, []);
+        adjacent.get(edge.fromCol).push(edge);
+      });
+      adjacent.forEach(edges => edges.sort((a, b) => positions.get(a.source).y - positions.get(b.source).y || positions.get(a.target).y - positions.get(b.target).y));
+      const port = (list, edge) => (list.indexOf(edge) - (list.length - 1) / 2) * Math.min(12, 64 / Math.max(1, list.length));
+      chainEdges.forEach((edge, index) => {
+        const source = positions.get(edge.source), target = positions.get(edge.target);
+        const fromY = source.y + port(outgoing.get(edge.source), edge);
+        const toY = target.y + port(incoming.get(edge.target), edge);
+        let points;
+        if (compactLayout) {
+          const side = edge.toCol - edge.fromCol > 1 ? -1 : 1;
+          const fromX = source.x + side * (CARD.width / 2 + 2);
+          const toX = target.x + side * (CARD.width / 2 + 2);
+          const track = source.x + side * (CARD.width / 2 + 24 + (index % 6) * 7);
+          points = [{ x: fromX, y: fromY }, { x: track, y: fromY }, { x: track, y: toY }, { x: toX, y: toY }];
+        } else {
+          const fromX = source.x + CARD.width / 2 + 2;
+          const toX = target.x - CARD.width / 2 - 2;
+          if (edge.toCol - edge.fromCol === 1) {
+            const edges = adjacent.get(edge.fromCol);
+            const track = fromX + 28 + (edges.indexOf(edge) + 1) / (edges.length + 1) * 72;
+            points = [{ x: fromX, y: fromY }, { x: track, y: fromY }, { x: track, y: toY }, { x: toX, y: toY }];
+          } else {
+            const railIndex = layout.skippedSources.indexOf(edge.source);
+            const top = railIndex % 2 === 0;
+            const level = Math.floor(railIndex / 2);
+            const railY = top ? layout.headingTop - 30 - level * 18 : layout.bodyTop + layout.maxBodyHeight + 30 + level * 18;
+            const fromTrack = fromX + 24 + (outgoing.get(edge.source).indexOf(edge) % 5) * 12;
+            const toTrack = toX - 24 - (incoming.get(edge.target).indexOf(edge) % 5) * 12;
+            points = [{ x: fromX, y: fromY }, { x: fromTrack, y: fromY }, { x: fromTrack, y: railY }, { x: toTrack, y: railY }, { x: toTrack, y: toY }, { x: toX, y: toY }];
+          }
+        }
+        const d = roundedRoute(points);
+        const bundle = svgElement('g', { class: 'edge-bundle', 'data-source': edge.source, 'data-target': edge.target });
+        bundle.appendChild(svgElement('path', { class: 'edge-halo', d }));
+        bundle.appendChild(svgElement('path', { class: 'dependency-edge ' + (edge.kind === 'prior' ? 'is-prereq' : 'is-unlocked'), 'data-source': edge.source, 'data-target': edge.target, d, 'marker-end': `url(#${edge.kind}-arrow)` }));
+        const title = svgElement('title');
+        title.textContent = courseByCode.get(edge.source).name + ' → ' + courseByCode.get(edge.target).name;
+        bundle.appendChild(title);
+        connections.appendChild(bundle);
+      });
+    }
+
+    function updateLinkEmphasis() {
+      if (viewMode !== 'chain') return;
+      const trace = hoveredCode || focusedCode || selectedCode;
+      const inspecting = Boolean(hoveredCode || focusedCode);
+      const neighbors = new Set([trace]);
+      connections.querySelectorAll('.edge-bundle').forEach(bundle => {
+        const incident = bundle.dataset.source === trace || bundle.dataset.target === trace;
+        if (incident) { neighbors.add(bundle.dataset.source); neighbors.add(bundle.dataset.target); }
+        bundle.classList.toggle('is-emphasized', incident);
+        bundle.classList.toggle('is-muted', inspecting && !incident);
+        bundle.classList.toggle('is-hidden', directLinesOnly && !incident);
+      });
+      // Put the highlighted paths above the remaining paths at crossings.
+      connections.querySelectorAll('.edge-bundle.is-emphasized').forEach(bundle => connections.appendChild(bundle));
+      nodesLayer.querySelectorAll('.course-card').forEach(card => {
+        card.classList.toggle('is-trace-muted', (inspecting || directLinesOnly) && !neighbors.has(card.dataset.code));
+        card.classList.toggle('is-trace-neighbor', inspecting && neighbors.has(card.dataset.code) && card.dataset.code !== trace);
+      });
+      $('directLinesButton').setAttribute('aria-pressed', String(directLinesOnly));
+      $('chainHint').textContent = inspecting
+        ? 'Ligações diretas de ' + courseByCode.get(trace).name
+        : directLinesOnly ? 'Exibindo as ligações diretas da disciplina selecionada.'
+        : compactLayout ? 'Siga os períodos de cima para baixo. Use o filtro para isolar ligações.'
+        : 'Passe o mouse ou dê foco em uma disciplina para seguir suas ligações.';
+    }
+
+    function readingView(animate = true) {
+      if (viewMode !== 'chain' || !positions.has(selectedCode)) return;
+      if (compactLayout) {
+        camera.scale = Math.min(1.05, Math.max(.8, (viewport.clientWidth - 24) / sceneBounds.width));
+        camera.x = viewport.clientWidth / 2 - sceneBounds.width / 2 * camera.scale;
+        camera.y = 110 - (positions.get(selectedCode).y - CARD.height / 2) * camera.scale;
+        applyCamera(animate);
+      } else {
+        const selected = positions.get(selectedCode);
+        camera.scale = Math.min(1, Math.max(.82, (viewport.clientHeight - 180) / Math.min(650, sceneBounds.height)));
+        camera.x = 70 - Math.max(0, selected.x - CARD.width / 2) * camera.scale;
+        const headingY = Math.min(...groups.map(group => group.center.y - HUB.height / 2));
+        const desiredY = viewport.clientHeight / 2 - selected.y * camera.scale;
+        const headingVisibleY = 58 - headingY * camera.scale;
+        const selectedVisibleY = viewport.clientHeight - 96 - (selected.y + CARD.height / 2) * camera.scale;
+        camera.y = Math.min(Math.max(desiredY, headingVisibleY), selectedVisibleY);
+        applyCamera(animate);
+      }
     }
 
     function makeCard(course, position) {
@@ -818,24 +1092,6 @@
       connections.appendChild(defs);
     }
 
-    function drawDependencyEdges() {
-      COURSES.forEach(course => course.prerequisites.forEach(code => {
-        const priorPath = (course.code === selectedCode || ancestors.has(course.code)) && ancestors.has(code);
-        const nextPath = (code === selectedCode || descendants.has(code)) && descendants.has(course.code);
-        if ((!priorPath && !nextPath) || !positions.has(code) || !positions.has(course.code)) return;
-        const source = positions.get(code);
-        const target = positions.get(course.code);
-        const kind = priorPath ? 'prior' : 'next';
-        const path = svgElement('path', {
-          class: 'dependency-edge ' + (priorPath ? 'is-prereq' : 'is-unlocked'),
-          'data-source': code, 'data-target': course.code,
-          d: curvedPath(anchor(source, target, CARD), anchor(target, source, CARD)),
-          'marker-end': 'url(#' + kind + '-arrow)'
-        });
-        connections.appendChild(path);
-      }));
-    }
-
     function selectCourse(code, keyboard = false) {
       if (selectedCode === code) { clearSelection(); return; }
       selectedCode = code;
@@ -855,6 +1111,10 @@
       selectedCode = null;
       ancestors.clear();
       descendants.clear();
+      directLinesOnly = false;
+      hoveredCode = null;
+      focusedCode = null;
+      chainEdges = [];
       $('selectionPanel').hidden = true;
       $('clearButton').hidden = true;
       $('relationDetails').open = false;
@@ -930,6 +1190,9 @@
     }
 
     function applyCamera(animate = false) {
+      // Keep native focus scrolling from displacing the canvas overlays.
+      viewport.scrollLeft = 0;
+      viewport.scrollTop = 0;
       window.clearTimeout(animationTimer);
       viewport.classList.toggle('is-animating', animate);
       if (animate) animationTimer = window.setTimeout(() => viewport.classList.remove('is-animating'), 250);
@@ -996,6 +1259,32 @@
     $('fitButton').addEventListener('click', () => fitScene());
     $('focusCourseButton').addEventListener('click', () => focusCourse(selectedCode));
     $('fitChainButton').addEventListener('click', () => fitScene());
+    $('chainOverviewButton').addEventListener('click', () => fitScene());
+    $('readingViewButton').addEventListener('click', () => readingView());
+    $('directLinesButton').addEventListener('click', () => {
+      directLinesOnly = !directLinesOnly;
+      hoveredCode = null;
+      focusedCode = null;
+      updateLinkEmphasis();
+    });
+
+    nodesLayer.addEventListener('pointerover', event => {
+      const card = event.target.closest('.course-card');
+      if (!card || viewMode !== 'chain' || event.pointerType === 'touch') return;
+      if (hoveredCode !== card.dataset.code) { hoveredCode = card.dataset.code; updateLinkEmphasis(); }
+    });
+    nodesLayer.addEventListener('pointerout', event => {
+      const from = event.target.closest('.course-card');
+      const to = event.relatedTarget instanceof Element ? event.relatedTarget.closest('.course-card') : null;
+      if (!from || from === to) return;
+      hoveredCode = to ? to.dataset.code : null;
+      updateLinkEmphasis();
+    });
+    nodesLayer.addEventListener('focusout', event => {
+      if (!event.target.closest('.course-card')) return;
+      focusedCode = null;
+      updateLinkEmphasis();
+    });
 
     nodesLayer.addEventListener('click', event => {
       const card = event.target.closest('.course-card');
@@ -1093,6 +1382,8 @@
     nodesLayer.addEventListener('focusin', event => {
       const card = event.target.closest('.course-card');
       if (!card) return;
+      focusedCode = card.dataset.code;
+      updateLinkEmphasis();
       viewport.scrollLeft = 0;
       viewport.scrollTop = 0;
       const cardRect = card.getBoundingClientRect();
