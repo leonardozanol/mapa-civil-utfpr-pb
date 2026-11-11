@@ -492,7 +492,7 @@
           <span class="chain-toolbar-hint" id="chainHint">Passe o mouse ou dê foco em uma disciplina para seguir suas ligações.</span>
         </div>
         <div class="chain-toolbar-actions">
-          <button type="button" class="plain-button" id="directLinesButton" aria-pressed="false">Só ligações diretas</button>
+          <button type="button" class="plain-button" id="directLinesButton" aria-pressed="true">Só ligações fortes</button>
           <button type="button" class="plain-button" id="readingViewButton">Aproximar leitura</button>
           <button type="button" class="plain-button" id="chainOverviewButton">Ver cadeia completa</button>
         </div>
@@ -646,7 +646,7 @@
     const CARD = { width: 218, height: 114 };
     const HUB = { width: 184, height: 112 };
     const MIN_ZOOM = 0.12;
-    const MAX_ZOOM = 2.5;
+    const MAX_ZOOM = 1.5;
     const camera = { x: 0, y: 0, scale: 1 };
     const positions = new Map();
     const groups = [];
@@ -659,7 +659,7 @@
     let animationTimer;
     let suppressClickUntil = 0;
     let compactLayout = window.matchMedia('(max-width: 700px)').matches;
-    let directLinesOnly = false;
+    let directLinesOnly = true;
     let hoveredCode = null;
     let focusedCode = null;
     let chainEdges = [];
@@ -932,7 +932,7 @@
       updateStatus();
       updateLinkEmphasis();
       $('chainDirection').textContent = compactLayout ? 'Períodos em sequência ↓' : 'Períodos em sequência →';
-      readingView(false);
+      fitScene(false);
     }
 
     function roundedRoute(points, radius = 12) {
@@ -1018,13 +1018,14 @@
       // Put the highlighted paths above the remaining paths at crossings.
       connections.querySelectorAll('.edge-bundle.is-emphasized').forEach(bundle => connections.appendChild(bundle));
       nodesLayer.querySelectorAll('.course-card').forEach(card => {
-        card.classList.toggle('is-trace-muted', (inspecting || directLinesOnly) && !neighbors.has(card.dataset.code));
+        card.classList.toggle('is-trace-muted', inspecting && !neighbors.has(card.dataset.code));
         card.classList.toggle('is-trace-neighbor', inspecting && neighbors.has(card.dataset.code) && card.dataset.code !== trace);
       });
       $('directLinesButton').setAttribute('aria-pressed', String(directLinesOnly));
+      $('directLinesButton').title = directLinesOnly ? 'Desativar o filtro e mostrar todas as ligações' : 'Mostrar somente as ligações fortes';
       $('chainHint').textContent = inspecting
-        ? 'Ligações diretas de ' + courseByCode.get(trace).name
-        : directLinesOnly ? 'Exibindo as ligações diretas da disciplina selecionada.'
+        ? 'Ligações fortes de ' + courseByCode.get(trace).name
+        : directLinesOnly ? 'Exibindo só as ligações fortes. Desative o filtro para mostrar todas.'
         : compactLayout ? 'Siga os períodos de cima para baixo. Use o filtro para isolar ligações.'
         : 'Passe o mouse ou dê foco em uma disciplina para seguir suas ligações.';
     }
@@ -1098,6 +1099,7 @@
       activePeriod = courseByCode.get(code).period;
       ancestors = collectRelations(code, prerequisitesByCode);
       descendants = collectRelations(code, dependents);
+      directLinesOnly = true;
       viewMode = 'chain';
       updateInspector();
       renderScene();
@@ -1111,7 +1113,7 @@
       selectedCode = null;
       ancestors.clear();
       descendants.clear();
-      directLinesOnly = false;
+      directLinesOnly = true;
       hoveredCode = null;
       focusedCode = null;
       chainEdges = [];
@@ -1207,7 +1209,7 @@
       const height = viewport.clientHeight;
       const paddingX = width < 700 ? 16 : 44;
       const paddingY = width < 700 ? 52 : 64;
-      camera.scale = Math.max(MIN_ZOOM, Math.min((width - paddingX * 2) / bounds.width, (height - paddingY * 2) / bounds.height, maximum));
+      camera.scale = Math.max(MIN_ZOOM, Math.min((width - paddingX * 2) / bounds.width, (height - paddingY * 2) / bounds.height, maximum, MAX_ZOOM));
       camera.x = width / 2 - (bounds.x + bounds.width / 2) * camera.scale;
       camera.y = height / 2 - (bounds.y + bounds.height / 2) * camera.scale;
       applyCamera(animate);
