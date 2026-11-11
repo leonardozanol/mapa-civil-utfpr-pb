@@ -154,6 +154,7 @@
     .legend-dot.current { background: var(--yellow); border: 1px solid #ae8d17; border-radius: 2px; }
     .legend-dot.next { background: var(--next); }
     .map-shell { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+    .map-workspace { scroll-margin-block: 12px; }
     .map-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
     .period-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; min-width: 0; }
     .period-caption { color: var(--muted); font-size: .7rem; font-weight: 700; margin-right: 7px; }
@@ -381,8 +382,10 @@
       .map-viewport { height: clamp(560px, 75svh, 720px); min-height: 440px; border-radius: 0 0 14px 14px; }
       .chain-toolbar { padding: 11px; gap: 10px; }
       .chain-toolbar-copy { flex-basis: 100%; }
-      .chain-toolbar-actions { width: 100%; }
-      .chain-toolbar-actions .plain-button { flex: 1; font-size: .66rem; padding-inline: 7px; min-height: 44px; }
+      .chain-toolbar-actions { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .chain-toolbar-actions .plain-button { font-size: .66rem; padding-inline: 7px; min-height: 44px; }
+      .map-workspace.is-chain { display: flex; flex-direction: column; height: calc(100svh - 24px); min-height: 360px; }
+      .map-workspace.is-chain .map-viewport { flex: 1; height: auto; min-height: 0; }
       .map-stage.is-chain .course-card { width: 218px; height: 124px; padding: 13px 14px; }
       .map-stage.is-chain .course-card.is-selected { padding: 12px 13px; }
       .map-stage.is-chain .course-card.is-prereq, .map-stage.is-chain .course-card.is-unlocked { padding-left: 11px; }
@@ -427,6 +430,25 @@
       html { scroll-behavior: auto; }
       *, *::before, *::after { transition: none !important; }
     }
+    .map-workspace:is(:fullscreen, .is-fullscreen-overlay) {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      background: var(--surface);
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .map-workspace.is-fullscreen-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      height: 100vh;
+      height: 100dvh;
+    }
+    html:has(.map-workspace.is-fullscreen-overlay) { overflow: hidden; }
+    .map-workspace:is(:fullscreen, .is-fullscreen-overlay) .map-viewport { flex: 1; height: auto; min-height: 0; border-radius: 0; }
+    .map-workspace.is-chain .chain-toolbar { flex: none; }
     @media print {
       .theme-button, .toolbar-actions, .chain-toolbar, .map-controls, .map-hint, .selection-actions, .relation-details { display: none !important; }
       .wrap { width: 100%; }
@@ -486,30 +508,33 @@
           <button type="button" class="plain-button" id="clearButton" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>Limpar seleção</button>
         </div>
       </div>
-      <div class="chain-toolbar" id="chainToolbar" hidden>
-        <div class="chain-toolbar-copy">
-          <span class="chain-toolbar-title" id="chainDirection">Períodos em sequência →</span>
-          <span class="chain-toolbar-hint" id="chainHint">Passe o mouse ou dê foco em uma disciplina para seguir suas ligações.</span>
+      <div class="map-workspace" id="mapWorkspace">
+        <div class="chain-toolbar" id="chainToolbar" hidden>
+          <div class="chain-toolbar-copy">
+            <span class="chain-toolbar-title">Períodos em sequência →</span>
+            <span class="chain-toolbar-hint" id="chainHint">Passe o mouse ou dê foco em uma disciplina para seguir suas ligações.</span>
+          </div>
+          <div class="chain-toolbar-actions">
+            <button type="button" class="plain-button" id="directLinesButton" aria-pressed="true">Só ligações fortes</button>
+            <button type="button" class="plain-button" id="readingViewButton">Aproximar leitura</button>
+            <button type="button" class="plain-button" id="chainOverviewButton">Ver cadeia completa</button>
+            <button type="button" class="plain-button" id="fullscreenButton" aria-controls="mapWorkspace" aria-pressed="false">Tela cheia</button>
+          </div>
         </div>
-        <div class="chain-toolbar-actions">
-          <button type="button" class="plain-button" id="directLinesButton" aria-pressed="true">Só ligações fortes</button>
-          <button type="button" class="plain-button" id="readingViewButton">Aproximar leitura</button>
-          <button type="button" class="plain-button" id="chainOverviewButton">Ver cadeia completa</button>
-        </div>
-      </div>
-      <div class="map-viewport" id="mapViewport" tabindex="0" role="region" aria-label="Mapa interativo de disciplinas" aria-describedby="mapHelp">
-        <div class="map-stage" id="mapStage">
-          <svg class="connections" id="connections" aria-hidden="true"></svg>
-          <div class="nodes-layer" id="nodesLayer"></div>
-        </div>
-        <div class="map-status" id="mapStatus" role="status" aria-live="polite"></div>
-        <p class="map-hint" id="mapHelp"><span class="desktop-hint">Arraste para mover · role para ampliar · 0 para enquadrar</span><span class="mobile-hint">Arraste para mover · use dois dedos para ampliar</span></p>
-        <div class="map-controls" role="group" aria-label="Controles do mapa">
-          <button type="button" class="zoom-button" id="zoomOut" aria-label="Diminuir zoom" title="Zoom Out (−)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
-          <button type="button" class="zoom-button zoom-level" id="zoomReset" aria-label="Definir zoom em 100%" title="Tamanho real (100%)"><span id="zoomLevel">100%</span></button>
-          <button type="button" class="zoom-button" id="zoomIn" aria-label="Aumentar zoom" title="Zoom In (+)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button>
-          <span class="controls-divider" aria-hidden="true"></span>
-          <button type="button" class="zoom-button" id="fitButton" aria-label="Enquadrar mapa" title="Enquadrar mapa (0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></button>
+        <div class="map-viewport" id="mapViewport" tabindex="0" role="region" aria-label="Mapa interativo de disciplinas" aria-describedby="mapHelp">
+          <div class="map-stage" id="mapStage">
+            <svg class="connections" id="connections" aria-hidden="true"></svg>
+            <div class="nodes-layer" id="nodesLayer"></div>
+          </div>
+          <div class="map-status" id="mapStatus" role="status" aria-live="polite"></div>
+          <p class="map-hint" id="mapHelp"><span class="desktop-hint">Arraste para mover · role para ampliar · 0 para enquadrar</span><span class="mobile-hint">Arraste para mover · use dois dedos para ampliar</span></p>
+          <div class="map-controls" role="group" aria-label="Controles do mapa">
+            <button type="button" class="zoom-button" id="zoomOut" aria-label="Diminuir zoom" title="Zoom Out (−)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+            <button type="button" class="zoom-button zoom-level" id="zoomReset" aria-label="Definir zoom em 100%" title="Tamanho real (100%)"><span id="zoomLevel">100%</span></button>
+            <button type="button" class="zoom-button" id="zoomIn" aria-label="Aumentar zoom" title="Zoom In (+)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button>
+            <span class="controls-divider" aria-hidden="true"></span>
+            <button type="button" class="zoom-button" id="fitButton" aria-label="Enquadrar mapa" title="Enquadrar mapa (0)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/></svg></button>
+          </div>
         </div>
       </div>
 
@@ -638,6 +663,8 @@
       throw new Error('Os dados da Matriz 636 estão incompletos.');
     }
 
+    const mapWorkspace = $('mapWorkspace');
+    const fullscreenButton = $('fullscreenButton');
     const viewport = $('mapViewport');
     const stage = $('mapStage');
     const nodesLayer = $('nodesLayer');
@@ -742,8 +769,10 @@
 
     function renderScene() {
       compactLayout = window.matchMedia('(max-width: 700px)').matches;
-      stage.classList.toggle('is-chain', viewMode === 'chain');
-      $('chainToolbar').hidden = viewMode !== 'chain';
+      const isChain = viewMode === 'chain';
+      stage.classList.toggle('is-chain', isChain);
+      mapWorkspace.classList.toggle('is-chain', isChain);
+      $('chainToolbar').hidden = !isChain;
       hoveredCode = null;
       focusedCode = null;
       if (viewMode === 'chain') { renderChainScene(); return; }
@@ -878,24 +907,22 @@
       chainEdges.forEach(edge => { edge.fromCol = layerByCode.get(edge.source); edge.toCol = layerByCode.get(edge.target); });
       const skippedSources = [...new Set(chainEdges.filter(edge => edge.toCol - edge.fromCol > 1).map(edge => edge.source))];
       const railCount = Math.ceil(skippedSources.length / 2);
-      const topRailSpace = compactLayout ? 0 : railCount * 18 + 28;
-      const bottomRailSpace = compactLayout ? 0 : railCount * 18 + 28;
+      const railSpace = railCount * 18 + 28;
       const rowStep = CARD.height + 48;
-      const columnGap = 132;
-      const margin = compactLayout ? 84 : 38;
-      const headingTop = compactLayout ? 32 : 44 + topRailSpace;
+      const columnGap = compactLayout ? 104 : 132;
+      const margin = compactLayout ? 24 : 38;
+      const headingTop = 44 + railSpace;
       const maxRows = Math.max(...layers.map(layer => layer.courses.length));
       const maxBodyHeight = maxRows * rowStep - 48;
       const bodyTop = headingTop + HUB.height + 40;
-      let mobileY = 32;
       const fragment = document.createDocumentFragment();
 
       layers.forEach((layer, col) => {
-        const x = compactLayout ? margin + CARD.width / 2 : margin + col * (CARD.width + columnGap) + CARD.width / 2;
-        const y = compactLayout ? mobileY : headingTop;
+        const x = margin + col * (CARD.width + columnGap) + CARD.width / 2;
+        const y = headingTop;
         const bodyHeight = layer.courses.length * rowStep - 48;
-        const firstY = compactLayout ? y + HUB.height + 38 : bodyTop + (maxBodyHeight - bodyHeight) / 2;
-        const height = compactLayout ? HUB.height + 38 + bodyHeight + 24 : HUB.height + 40 + maxBodyHeight + 24;
+        const firstY = bodyTop + (maxBodyHeight - bodyHeight) / 2;
+        const height = HUB.height + 40 + maxBodyHeight + 24;
         groups.push({ period: layer.period, x: x - CARD.width / 2 - 14, y: y - 14, width: CARD.width + 28, height: height + 28, center: { x, y: y + HUB.height / 2 } });
         connections.appendChild(svgElement('rect', { class: 'chain-lane', x: x - CARD.width / 2 - 14, y: y - 14, width: CARD.width + 28, height: height + 28, rx: 20 }));
         const allCourses = COURSES.filter(course => course.period === layer.period);
@@ -914,11 +941,10 @@
           positions.set(course.code, position);
           fragment.appendChild(makeCard(course, position));
         });
-        mobileY = y + height + 76;
       });
 
-      const worldWidth = compactLayout ? CARD.width + margin * 2 : margin * 2 + layers.length * CARD.width + (layers.length - 1) * columnGap;
-      const worldHeight = compactLayout ? mobileY : bodyTop + maxBodyHeight + 48 + bottomRailSpace;
+      const worldWidth = margin * 2 + layers.length * CARD.width + (layers.length - 1) * columnGap;
+      const worldHeight = bodyTop + maxBodyHeight + 48 + railSpace;
       sceneBounds = { x: 0, y: 0, width: worldWidth, height: worldHeight };
       stage.style.width = worldWidth + 'px';
       stage.style.height = worldHeight + 'px';
@@ -931,7 +957,6 @@
       updateNavigation();
       updateStatus();
       updateLinkEmphasis();
-      $('chainDirection').textContent = compactLayout ? 'Períodos em sequência ↓' : 'Períodos em sequência →';
       fitScene(false);
     }
 
@@ -964,33 +989,26 @@
       });
       adjacent.forEach(edges => edges.sort((a, b) => positions.get(a.source).y - positions.get(b.source).y || positions.get(a.target).y - positions.get(b.target).y));
       const port = (list, edge) => (list.indexOf(edge) - (list.length - 1) / 2) * Math.min(12, 64 / Math.max(1, list.length));
-      chainEdges.forEach((edge, index) => {
+      chainEdges.forEach(edge => {
         const source = positions.get(edge.source), target = positions.get(edge.target);
         const fromY = source.y + port(outgoing.get(edge.source), edge);
         const toY = target.y + port(incoming.get(edge.target), edge);
+        const fromX = source.x + CARD.width / 2 + 2;
+        const toX = target.x - CARD.width / 2 - 2;
         let points;
-        if (compactLayout) {
-          const side = edge.toCol - edge.fromCol > 1 ? -1 : 1;
-          const fromX = source.x + side * (CARD.width / 2 + 2);
-          const toX = target.x + side * (CARD.width / 2 + 2);
-          const track = source.x + side * (CARD.width / 2 + 24 + (index % 6) * 7);
+        if (edge.toCol - edge.fromCol === 1) {
+          const edges = adjacent.get(edge.fromCol);
+          const fraction = (edges.indexOf(edge) + 1) / (edges.length + 1);
+          const track = fromX + (toX - fromX) * (0.22 + fraction * 0.56);
           points = [{ x: fromX, y: fromY }, { x: track, y: fromY }, { x: track, y: toY }, { x: toX, y: toY }];
         } else {
-          const fromX = source.x + CARD.width / 2 + 2;
-          const toX = target.x - CARD.width / 2 - 2;
-          if (edge.toCol - edge.fromCol === 1) {
-            const edges = adjacent.get(edge.fromCol);
-            const track = fromX + 28 + (edges.indexOf(edge) + 1) / (edges.length + 1) * 72;
-            points = [{ x: fromX, y: fromY }, { x: track, y: fromY }, { x: track, y: toY }, { x: toX, y: toY }];
-          } else {
-            const railIndex = layout.skippedSources.indexOf(edge.source);
-            const top = railIndex % 2 === 0;
-            const level = Math.floor(railIndex / 2);
-            const railY = top ? layout.headingTop - 30 - level * 18 : layout.bodyTop + layout.maxBodyHeight + 30 + level * 18;
-            const fromTrack = fromX + 24 + (outgoing.get(edge.source).indexOf(edge) % 5) * 12;
-            const toTrack = toX - 24 - (incoming.get(edge.target).indexOf(edge) % 5) * 12;
-            points = [{ x: fromX, y: fromY }, { x: fromTrack, y: fromY }, { x: fromTrack, y: railY }, { x: toTrack, y: railY }, { x: toTrack, y: toY }, { x: toX, y: toY }];
-          }
+          const railIndex = layout.skippedSources.indexOf(edge.source);
+          const top = railIndex % 2 === 0;
+          const level = Math.floor(railIndex / 2);
+          const railY = top ? layout.headingTop - 30 - level * 18 : layout.bodyTop + layout.maxBodyHeight + 30 + level * 18;
+          const fromTrack = fromX + 24 + (outgoing.get(edge.source).indexOf(edge) % 5) * 12;
+          const toTrack = toX - 24 - (incoming.get(edge.target).indexOf(edge) % 5) * 12;
+          points = [{ x: fromX, y: fromY }, { x: fromTrack, y: fromY }, { x: fromTrack, y: railY }, { x: toTrack, y: railY }, { x: toTrack, y: toY }, { x: toX, y: toY }];
         }
         const d = roundedRoute(points);
         const bundle = svgElement('g', { class: 'edge-bundle', 'data-source': edge.source, 'data-target': edge.target });
@@ -1025,20 +1043,20 @@
       $('directLinesButton').title = directLinesOnly ? 'Desativar o filtro e mostrar todas as ligações' : 'Mostrar somente as ligações fortes';
       $('chainHint').textContent = inspecting
         ? 'Ligações fortes de ' + courseByCode.get(trace).name
+        : compactLayout ? 'Arraste para os lados para percorrer os períodos.'
         : directLinesOnly ? 'Exibindo só as ligações fortes. Desative o filtro para mostrar todas.'
-        : compactLayout ? 'Siga os períodos de cima para baixo. Use o filtro para isolar ligações.'
         : 'Passe o mouse ou dê foco em uma disciplina para seguir suas ligações.';
     }
 
     function readingView(animate = true) {
       if (viewMode !== 'chain' || !positions.has(selectedCode)) return;
+      const selected = positions.get(selectedCode);
       if (compactLayout) {
-        camera.scale = Math.min(1.05, Math.max(.8, (viewport.clientWidth - 24) / sceneBounds.width));
-        camera.x = viewport.clientWidth / 2 - sceneBounds.width / 2 * camera.scale;
-        camera.y = 110 - (positions.get(selectedCode).y - CARD.height / 2) * camera.scale;
+        camera.scale = Math.min(1.05, Math.max(.8, (viewport.clientWidth - 32) / CARD.width));
+        camera.x = viewport.clientWidth / 2 - selected.x * camera.scale;
+        camera.y = viewport.clientHeight / 2 - selected.y * camera.scale;
         applyCamera(animate);
       } else {
-        const selected = positions.get(selectedCode);
         camera.scale = Math.min(1, Math.max(.82, (viewport.clientHeight - 180) / Math.min(650, sceneBounds.height)));
         camera.x = 70 - Math.max(0, selected.x - CARD.width / 2) * camera.scale;
         const headingY = Math.min(...groups.map(group => group.center.y - HUB.height / 2));
@@ -1093,6 +1111,65 @@
       connections.appendChild(defs);
     }
 
+    function isChainFullscreen() {
+      return document.fullscreenElement === mapWorkspace ||
+        mapWorkspace.classList.contains('is-fullscreen-overlay');
+    }
+
+    function centerChainInPage(code = selectedCode) {
+      window.requestAnimationFrame(() => {
+        if (viewMode !== 'chain' || selectedCode !== code || isChainFullscreen()) return;
+        const fitsOnScreen = mapWorkspace.offsetHeight + 24 <= window.innerHeight;
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        mapWorkspace.scrollIntoView({
+          block: fitsOnScreen ? 'center' : 'start',
+          behavior: reducedMotion ? 'auto' : 'smooth'
+        });
+      });
+    }
+
+    function updateFullscreenButton() {
+      const active = isChainFullscreen();
+      fullscreenButton.textContent = active ? 'Sair da tela cheia' : 'Tela cheia';
+      fullscreenButton.setAttribute('aria-pressed', String(active));
+    }
+
+    async function exitChainFullscreen() {
+      if (document.fullscreenElement === mapWorkspace) {
+        try { await document.exitFullscreen(); } catch (_) {}
+        return;
+      }
+      mapWorkspace.classList.remove('is-fullscreen-overlay');
+      updateFullscreenButton();
+      centerChainInPage();
+    }
+
+    async function toggleChainFullscreen() {
+      if (fullscreenButton.disabled || viewMode !== 'chain') return;
+      fullscreenButton.disabled = true;
+      try {
+        if (isChainFullscreen()) {
+          await exitChainFullscreen();
+          return;
+        }
+        if (document.fullscreenEnabled && typeof mapWorkspace.requestFullscreen === 'function') {
+          try { await mapWorkspace.requestFullscreen(); } catch (_) {}
+        }
+        if (viewMode !== 'chain') {
+          await exitChainFullscreen();
+          return;
+        }
+        // Use the available page area when the browser cannot enter fullscreen.
+        if (document.fullscreenElement !== mapWorkspace) {
+          mapWorkspace.classList.add('is-fullscreen-overlay');
+        }
+      } finally {
+        fullscreenButton.disabled = false;
+        updateFullscreenButton();
+        if (viewMode === 'chain') fullscreenButton.focus({ preventScroll: true });
+      }
+    }
+
     function selectCourse(code, keyboard = false) {
       if (selectedCode === code) { clearSelection(); return; }
       selectedCode = code;
@@ -1107,9 +1184,11 @@
         const card = nodesLayer.querySelector('[data-code="' + code + '"]');
         if (card) card.focus({ preventScroll: true });
       }
+      centerChainInPage(code);
     }
 
     function resetSelection() {
+      if (isChainFullscreen()) void exitChainFullscreen();
       selectedCode = null;
       ancestors.clear();
       descendants.clear();
@@ -1263,6 +1342,11 @@
     $('fitChainButton').addEventListener('click', () => fitScene());
     $('chainOverviewButton').addEventListener('click', () => fitScene());
     $('readingViewButton').addEventListener('click', () => readingView());
+    fullscreenButton.addEventListener('click', toggleChainFullscreen);
+    document.addEventListener('fullscreenchange', () => {
+      updateFullscreenButton();
+      if (!isChainFullscreen()) centerChainInPage();
+    });
     $('directLinesButton').addEventListener('click', () => {
       directLinesOnly = !directLinesOnly;
       hoveredCode = null;
@@ -1379,7 +1463,19 @@
       event.preventDefault();
     });
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && selectedCode) { clearSelection(); viewport.focus({ preventScroll: true }); }
+      if (event.key !== 'Escape') return;
+      if (isChainFullscreen()) {
+        event.preventDefault();
+        void exitChainFullscreen();
+      } else if (selectedCode) {
+        clearSelection();
+        viewport.focus({ preventScroll: true });
+      }
+    });
+    document.addEventListener('focusin', event => {
+      if (isChainFullscreen() && !mapWorkspace.contains(event.target) && !fullscreenButton.disabled) {
+        fullscreenButton.focus({ preventScroll: true });
+      }
     });
     nodesLayer.addEventListener('focusin', event => {
       const card = event.target.closest('.course-card');
